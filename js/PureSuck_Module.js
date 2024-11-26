@@ -1,4 +1,4 @@
-/** 这个JS包含了各种需要处理的的内容 **/
+/** 这个JS包含了各种需要处理的内容 **/
 /** 回到顶部按钮，TOC目录，内部卡片部分内容解析都在这里 **/
 
 // 节流函数（throttle）
@@ -15,6 +15,8 @@ function throttle(callback, delay) {
 
 function handleGoTopButton() {
     const goTopBtn = document.getElementById('go-top');
+    if (!goTopBtn) return;  // 如果元素不存在，退出函数
+
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.boundingClientRect.top < 0) {
@@ -27,13 +29,15 @@ function handleGoTopButton() {
     observer.observe(document.body);
 
     const goTopAnchor = document.querySelector('#go-top .go');
-    goTopAnchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
+    if (goTopAnchor) {  // 确保 goTopAnchor 存在
+        goTopAnchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         });
-    });
+    }
 }
 
 function generateTOC() {
@@ -41,10 +45,10 @@ function generateTOC() {
     const toc = document.querySelector(".toc");
     const postWrapper = document.querySelector(".inner-post-wrapper");
 
-    if (!toc || !postWrapper) return;
+    if (!toc || !postWrapper) return;  // 如果 toc 或 postWrapper 不存在，退出
 
     const elements = Array.from(postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-    if (!elements.length) return;
+    if (!elements.length) return;  // 如果没有标题元素，退出
 
     const fragment = document.createDocumentFragment();
     const ul = document.createElement('ul');
@@ -291,33 +295,26 @@ function parseCollapsiblePanels() {
 }
 
 function parseTabs() {
-    const tabsContainers = document.querySelectorAll('.tabs');
+    const tabContainers = document.querySelectorAll('.tabs');
 
-    tabsContainers.forEach(tabsContainer => {
-        const tabLinks = tabsContainer.querySelectorAll('.tab-link');
-        const tabContents = tabsContainer.querySelectorAll('.tab-content');
+    tabContainers.forEach(container => {
+        const tabs = Array.from(container.querySelectorAll('.tab'));
+        const contentSections = Array.from(container.querySelectorAll('.tab-content'));
 
-        tabLinks.forEach(link => {
-            link.addEventListener('click', (event) => {
-                event.preventDefault();
-                tabLinks.forEach(l => l.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-
-                link.classList.add('active');
-                const targetTabContent = document.querySelector(link.getAttribute('href'));
-                targetTabContent.classList.add('active');
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contentSections.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                contentSections[index].classList.add('active');
             });
         });
     });
 }
 
-function runShortcodes() {
-    handleGoTopButton();
-    generateTOC();
-    parseFriendCards();
-    parseCollapsiblePanels();
-    parseTabs();
-}
-
-// 初始化
-runShortcodes();
+// 调用这些函数
+handleGoTopButton();
+generateTOC();
+parseFriendCards();
+parseCollapsiblePanels();
+parseTabs();
