@@ -1,63 +1,70 @@
-// MoxDesign 1.0
-function MoxToast(options) {
-    // 默认参数
+// MoxDesign 1.1 优化版
+
+// 公共方法：创建元素并设置属性
+function createElement(tag, className, styles = {}, attributes = {}) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    Object.assign(element.style, styles);
+    Object.assign(element, attributes);
+    return element;
+}
+
+// MoxToast
+function MoxToast(options = {}) {
     const defaults = {
         message: "This is a toast message",
         duration: 3000,
-        position: "bottom", // 可以是 "top" 或 "bottom"
+        position: "bottom", // "top" 或 "bottom"
         backgroundColor: "var(--card2-color)",
         textColor: "var(--text-color)",
-        borderColor: "var(--border-color)", // 使用CSS变量或默认值
+        borderColor: "var(--border-color)",
     };
 
-    // 合并用户参数和默认参数
     const settings = { ...defaults, ...options };
 
-    // 检查并移除旧的Toast元素
+    // 清除已有的Toast
     const oldToast = document.getElementById("mox-toast");
-    if (oldToast && document.body.contains(oldToast)) {
-        oldToast.className = "hide";
-        setTimeout(function () {
-            if (document.body.contains(oldToast)) {
-                document.body.removeChild(oldToast);
-            }
-        }, 500); // 等待动画完成后再移除
+    if (oldToast) {
+        oldToast.classList.remove("show");
+        oldToast.classList.add("hide");
+        setTimeout(() => oldToast.remove(), 500); // 等待动画完成后移除
     }
 
-    // 创建一个新的div元素
-    const toast = document.createElement("div");
-    toast.id = "mox-toast";
-    toast.textContent = settings.message;
-    toast.style.backgroundColor = settings.backgroundColor;
-    toast.style.color = settings.textColor;
-    toast.style.borderColor = settings.borderColor;
-    toast.style.bottom = settings.position === "bottom" ? `45px` : "auto";
-    toast.style.top = settings.position === "top" ? `45px` : "auto";
-    toast.classList.add(settings.position);
+    // 创建新Toast
+    const toast = createElement("div", "mox-toast", {
+        backgroundColor: settings.backgroundColor,
+        color: settings.textColor,
+        borderColor: settings.borderColor,
+        position: "fixed",
+        zIndex: 9999,
+        left: "50%",
+        transform: "translateX(-50%)",
+        padding: "10px 20px",
+        borderRadius: "5px",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+        bottom: settings.position === "bottom" ? "45px" : "auto",
+        top: settings.position === "top" ? "45px" : "auto",
+    });
 
-    // 将Toast元素插入到body中
+    toast.textContent = settings.message;
     document.body.appendChild(toast);
 
-    // 显示Toast
-    toast.className = `${settings.position} show`;
-
-    // 设置定时器以移除Toast元素
-    setTimeout(function () {
-        toast.className = `${settings.position} hide`;
-        setTimeout(function () {
-            if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
-            }
-        }, 500); // 等待动画完成后再移除
+    // 动画显示
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+        toast.classList.add("hide");
+        setTimeout(() => toast.remove(), 500); // 等待动画完成后移除
     }, settings.duration);
 }
 
-function MoxNotification(options) {
+// MoxNotification
+function MoxNotification(options = {}) {
     const defaults = {
         title: "Notification Title",
         message: "This is a notification message",
         duration: 4500,
-        position: "bottom-right",
+        position: "bottom-right", // "top-left", "top-right", "bottom-left", "bottom-right"
         backgroundColor: "var(--card2-color)",
         textColor: "var(--text-color)",
         borderColor: "var(--border-color)",
@@ -66,76 +73,78 @@ function MoxNotification(options) {
 
     const settings = { ...defaults, ...options };
 
+    // 创建容器（如果不存在）
     let container = document.querySelector('.mox-notification-container');
     if (!container) {
-        container = document.createElement('div');
-        container.className = 'mox-notification-container';
+        container = createElement('div', 'mox-notification-container', {
+            position: 'fixed',
+            zIndex: 9999,
+            right: settings.position.includes("right") ? "20px" : "auto",
+            left: settings.position.includes("left") ? "20px" : "auto",
+            bottom: settings.position.includes("bottom") ? "20px" : "auto",
+            top: settings.position.includes("top") ? "20px" : "auto",
+        });
         document.body.appendChild(container);
     }
 
-    const notification = document.createElement("div");
-    notification.className = "mox-notification";
-    notification.style.backgroundColor = settings.backgroundColor;
-    notification.style.color = settings.textColor;
-    notification.style.borderColor = settings.borderColor;
+    // 创建通知
+    const notification = createElement("div", "mox-notification", {
+        backgroundColor: settings.backgroundColor,
+        color: settings.textColor,
+        borderColor: settings.borderColor,
+        borderRadius: "8px",
+        padding: "15px",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+        display: "flex",
+        alignItems: "center",
+        marginBottom: "10px",
+        opacity: 0,
+        transition: "opacity 0.3s ease-in-out",
+    });
 
+    // 添加图标
     if (settings.icon) {
-        const icon = document.createElement("div");
-        icon.className = "icon";
+        const iconContainer = createElement("div", "icon", { marginRight: "10px" });
         if (settings.icon.startsWith("http")) {
-            const img = document.createElement("img");
-            img.src = settings.icon;
-            img.alt = "Notification Icon";
-            icon.appendChild(img);
+            const img = createElement("img", "", { width: "20px", height: "20px" }, { src: settings.icon });
+            iconContainer.appendChild(img);
         } else {
-            icon.className += ` ${settings.icon}`;
+            iconContainer.classList.add(settings.icon); // 使用CSS类
         }
-        notification.appendChild(icon);
+        notification.appendChild(iconContainer);
     }
 
-    const content = document.createElement("div");
-    content.className = "mox-content";
-
-    const title = document.createElement("div");
-    title.className = "mox-title";
+    // 添加标题和消息
+    const content = createElement("div", "mox-content");
+    const title = createElement("div", "mox-title");
     title.textContent = settings.title;
-    content.appendChild(title);
-
-    const message = document.createElement("div");
-    message.className = "mox-message";
+    const message = createElement("div", "mox-message");
     message.textContent = settings.message;
-    content.appendChild(message);
 
+    content.appendChild(title);
+    content.appendChild(message);
     notification.appendChild(content);
 
-    const closeButton = document.createElement("div");
-    closeButton.className = "mox-close-btn";
+    // 添加关闭按钮
+    const closeButton = createElement("div", "mox-close-btn", { cursor: "pointer", marginLeft: "auto" });
     closeButton.textContent = "×";
-    closeButton.onclick = function () {
-        hideNotification(notification);
-    };
-    notification.appendChild(closeButton);
+    closeButton.onclick = () => hideNotification(notification);
 
+    notification.appendChild(closeButton);
     container.appendChild(notification);
 
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
+    // 显示通知
+    setTimeout(() => notification.style.opacity = 1, 10);
 
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-
+    // 自动隐藏
     if (settings.duration > 0) {
-        setTimeout(() => {
-            hideNotification(notification);
-        }, settings.duration);
+        setTimeout(() => hideNotification(notification), settings.duration);
     }
 }
 
+// 隐藏通知
 function hideNotification(notification) {
-    notification.classList.remove('show');
-    notification.classList.add('hide');
+    notification.style.opacity = 0;
     setTimeout(() => {
         if (notification.parentElement) {
             notification.parentElement.removeChild(notification);
@@ -144,10 +153,20 @@ function hideNotification(notification) {
 }
 
 /**
-    MoxNotification({
-    title: "Persistent Notification",
-    message: "This notification won't auto-close.",
-    duration: 0, //timer set to 0 to disable auto-close
-    icon: "https://example.com/icon.png"
+    使用示例：
+    MoxToast({
+        message: "操作成功！",
+        duration: 2000,
+        position: "top",
+        backgroundColor: "#4caf50",
+        textColor: "#fff"
     });
- **/
+
+    MoxNotification({
+        title: "新消息",
+        message: "你有一条新的通知。",
+        duration: 5000,
+        position: "top-right",
+        icon: "https://example.com/icon.png"
+    });
+**/
