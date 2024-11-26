@@ -95,27 +95,19 @@
     <script defer src="<?php $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
     <script defer src="<?php $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
     <script defer src="<?php $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
-    
+
     <!-- 引入 AOS -->
     <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/aos.css'); ?>">
     <script defer src="<?php $this->options->themeUrl('/js/aos.js'); ?>"></script>
-
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        AOS.init({
-            duration: 800,
-            offset: 120,
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({ duration: 800, offset: 120 });
         });
-    });
 
-    document.addEventListener("pjax:success", function() {
-        AOS.init({
-            duration: 800,
-            offset: 120,
+        document.addEventListener("pjax:success", function() {
+            AOS.init({ duration: 800, offset: 120 });
         });
-    });
     </script>
-
 
     <!-- Pjax 支持 -->
     <?php if ($this->options->enablepjax == '1'): ?>
@@ -141,6 +133,37 @@
                     AOS.refresh();
                 });
             });
+
+            function initializeCommentsOwO() {
+    // 使用 MutationObserver 确保 DOM 渲染完成后再初始化
+    const observer = new MutationObserver((mutations, observer) => {
+        const container = document.querySelector('.OwO-container');
+        const textarea = document.querySelector('.OwO-textarea');
+
+        if (container && textarea) {
+            new OwO({
+                logo: '表情',
+                container: container,
+                target: textarea,
+                api: '<?php $this->options->themeUrl('/json/OwO.json'); ?>',
+                position: 'down',
+                width: '100%',
+                maxHeight: '250px'
+            });
+
+            console.log('OwO 初始化成功');
+            observer.disconnect(); // 完成初始化后停止监听
+        }
+    });
+
+    // 开始观察目标区域
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// 页面初次加载和 PJAX 刷新时都调用初始化
+document.addEventListener('DOMContentLoaded', initializeCommentsOwO);
+document.addEventListener('pjax:success', initializeCommentsOwO);
+
         </script>
     <?php endif; ?>
 </head>
@@ -180,3 +203,5 @@
             </div>
         </header>
         <main class="main">
+
+
