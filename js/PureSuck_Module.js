@@ -1,11 +1,8 @@
-/** 这个JS包含了各种需要处理的内容 **/
-/** 回到顶部按钮，TOC目录，内部卡片部分内容解析都在这里 **/
-
 // 节流函数（throttle）
 function throttle(callback, delay) {
     let lastTime = 0;
     return function () {
-        const now = new Date().getTime();
+        const now = performance.now(); // 使用更高精度的性能计时器
         if (now - lastTime >= delay) {
             callback();
             lastTime = now;
@@ -13,51 +10,48 @@ function throttle(callback, delay) {
     };
 }
 
+// 回到顶部按钮
 function handleGoTopButton() {
     const goTopBtn = document.getElementById('go-top');
-    if (!goTopBtn) return;  // 如果元素不存在，退出函数
+    if (!goTopBtn) {
+        console.warn('回到顶部按钮元素不存在');
+        return;
+    }
 
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-            if (entry.boundingClientRect.top < 0) {
-                goTopBtn.classList.add('visible');
-            } else {
-                goTopBtn.classList.remove('visible');
-            }
+            goTopBtn.classList.toggle('visible', entry.boundingClientRect.top < 0);
         });
     });
     observer.observe(document.body);
 
     const goTopAnchor = document.querySelector('#go-top .go');
-    if (goTopAnchor) {  // 确保 goTopAnchor 存在
-        goTopAnchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+    goTopAnchor?.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
         });
-    }
+    });
 }
 
+// 生成 TOC 目录
 function generateTOC() {
     const tocSection = document.getElementById("toc-section");
     const toc = document.querySelector(".toc");
     const postWrapper = document.querySelector(".inner-post-wrapper");
 
-    if (!toc || !postWrapper) return;  // 如果 toc 或 postWrapper 不存在，退出
+    if (!toc || !postWrapper) return;
 
     const elements = Array.from(postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-    if (!elements.length) return;  // 如果没有标题元素，退出
+    if (!elements.length) return;
 
     const fragment = document.createDocumentFragment();
     const ul = document.createElement('ul');
     ul.id = 'toc';
 
     elements.forEach((element, index) => {
-        if (!element.id) {
-            element.id = `heading-${index}`;
-        }
+        element.id = element.id || `heading-${index}`;
         const li = document.createElement('li');
         li.className = `li li-${element.tagName[1]}`;
         li.innerHTML = `<a href="#${element.id}" id="link-${element.id}" class="toc-a">${element.textContent}</a>`;
@@ -72,24 +66,6 @@ function generateTOC() {
 
     toc.appendChild(fragment);
 
-    toc.addEventListener("click", event => {
-        if (event.target.matches('.toc-a')) {
-            event.preventDefault();
-            const targetId = event.target.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                const targetTop = targetElement.getBoundingClientRect().top + window.scrollY;
-                window.scrollTo({
-                    top: targetTop,
-                    behavior: "smooth"
-                });
-                setTimeout(() => {
-                    window.location.hash = targetId;
-                }, 300);
-            }
-        }
-    });
-
     handleScroll(elements);
 
     if (tocSection) {
@@ -100,20 +76,16 @@ function generateTOC() {
             rightSidebar.style.top = "0";
         }
     }
-
     window.dispatchEvent(new Event('scroll'));
 }
 
+// 获取元素顶部位置
 function getElementTop(element) {
-    let actualTop = element.offsetTop;
-    let current = element.offsetParent;
-    while (current !== null) {
-        actualTop += current.offsetTop;
-        current = current.offsetParent;
-    }
-    return actualTop;
+    const rect = element.getBoundingClientRect();
+    return rect.top + window.scrollY;
 }
 
+// 移除 TOC 目录项的活动类
 function removeClass(elements) {
     elements.forEach(element => {
         const anchor = document.querySelector(`#link-${element.id}`);
@@ -123,6 +95,7 @@ function removeClass(elements) {
     });
 }
 
+// 处理滚动事件，更新 TOC 目录高亮
 function handleScroll(elements) {
     let ticking = false;
     const tocItems = document.querySelectorAll(".toc li");
@@ -172,6 +145,7 @@ function handleScroll(elements) {
     }, 100)); // 使用节流（throttle）来减少滚动事件触发频率
 }
 
+// 解析朋友卡片
 function parseFriendCards() {
     const container = document.body;
     const fragment = document.createDocumentFragment();
@@ -251,6 +225,7 @@ function parseFriendCards() {
     container.appendChild(fragment);
 }
 
+// 解析可折叠面板
 function parseCollapsiblePanels() {
     const elements = document.querySelectorAll('[collapsible-panel]');
 
@@ -294,6 +269,7 @@ function parseCollapsiblePanels() {
     });
 }
 
+// 解析选项卡
 function parseTabs() {
     const tabContainers = document.querySelectorAll('.tabs');
 
@@ -302,19 +278,24 @@ function parseTabs() {
         const contentSections = Array.from(container.querySelectorAll('.tab-content'));
 
         tabs.forEach((tab, index) => {
-            tab.addEventListener('click', () => {
+            tab.removeEventListener('click', tabClickHandler);  // 移除旧事件
+            tab.addEventListener('click', function () {
                 tabs.forEach(t => t.classList.remove('active'));
                 contentSections.forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
                 contentSections[index].classList.add('active');
             });
         });
+
+        function tabClickHandler() {}
     });
 }
 
-// 调用这些函数
-handleGoTopButton();
-generateTOC();
-parseFriendCards();
-parseCollapsiblePanels();
-parseTabs();
+// 页面加载完成后初始化功能
+document.addEventListener('DOMContentLoaded', function () {
+    handleGoTopButton();
+    generateTOC();
+    parseFriendCards();
+    parseCollapsiblePanels();
+    parseTabs();
+});
