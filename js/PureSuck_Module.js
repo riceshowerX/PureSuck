@@ -1,6 +1,18 @@
 /** 这个JS包含了各种需要处理的的内容 **/
 /** 回到顶部按钮，TOC目录，内部卡片部分内容解析都在这里 **/
 
+// 节流函数（throttle）
+function throttle(callback, delay) {
+    let lastTime = 0;
+    return function () {
+        const now = new Date().getTime();
+        if (now - lastTime >= delay) {
+            callback();
+            lastTime = now;
+        }
+    };
+}
+
 function handleGoTopButton() {
     const goTopBtn = document.getElementById('go-top');
     const observer = new IntersectionObserver(entries => {
@@ -114,7 +126,7 @@ function handleScroll(elements) {
 
     const elementTops = elements.map(element => getElementTop(element));
 
-    window.addEventListener("scroll", () => {
+    window.addEventListener("scroll", throttle(() => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
                 const currentPosition = window.scrollY;
@@ -153,7 +165,7 @@ function handleScroll(elements) {
             });
             ticking = true;
         }
-    });
+    }, 100)); // 使用节流（throttle）来减少滚动事件触发频率
 }
 
 function parseFriendCards() {
@@ -235,7 +247,6 @@ function parseFriendCards() {
     container.appendChild(fragment);
 }
 
-
 function parseCollapsiblePanels() {
     const elements = document.querySelectorAll('[collapsible-panel]');
 
@@ -280,261 +291,33 @@ function parseCollapsiblePanels() {
 }
 
 function parseTabs() {
-    const tabContainers = document.querySelectorAll('[tabs]');
+    const tabsContainers = document.querySelectorAll('.tabs');
 
-    tabContainers.forEach((container, containerIndex) => {
-        const tabElements = Array.from(container.children);
-        const tabTitles = [];
-        const tabContents = [];
+    tabsContainers.forEach(tabsContainer => {
+        const tabLinks = tabsContainer.querySelectorAll('.tab-link');
+        const tabContents = tabsContainer.querySelectorAll('.tab-content');
 
-        tabElements.forEach((child) => {
-            const title = child.getAttribute('tab-title');
-            if (title) {
-                tabTitles.push(title);
-                tabContents.push(child.cloneNode(true));
-            }
-        });
+        tabLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                tabLinks.forEach(l => l.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
 
-        if (tabTitles.length === 0) return;
-
-        const tabHeaderHTML = tabTitles.map((title, index) => `
-            <div class="tab-link ${index === 0 ? 'active' : ''}" 
-                 data-tab="tab${containerIndex + 1}-${index + 1}" 
-                 role="tab" 
-                 aria-controls="tab${containerIndex + 1}-${index + 1}" 
-                 tabindex="${index === 0 ? '0' : '-1'}">
-                ${title}
-            </div>
-        `).join('');
-
-        const tabContentHTML = tabContents.map((content, index) => {
-            const tabPane = document.createElement('div');
-            tabPane.className = `tab-pane ${index === 0 ? 'active' : ''}`;
-            tabPane.id = `tab${containerIndex + 1}-${index + 1}`;
-            tabPane.setAttribute('role', 'tabpanel');
-            tabPane.setAttribute('aria-labelledby', `tab${containerIndex + 1}-${index + 1}`);
-            tabPane.appendChild(content);
-            return tabPane.outerHTML;
-        }).join('');
-
-        const tabContainer = document.createElement('div');
-        tabContainer.className = 'tab-container';
-        tabContainer.innerHTML = `
-            <div class="tab-header-wrapper">
-                <button class="scroll-button left" aria-label="向左"></button>
-                <div class="tab-header" role="tablist">
-                    ${tabHeaderHTML}
-                    <div class="tab-indicator"></div>
-                </div>
-                <button class="scroll-button right" aria-label="向右"></button>
-            </div>
-            <div class="tab-content">
-                ${tabContentHTML}
-            </div>
-        `;
-
-        container.innerHTML = '';
-        container.appendChild(tabContainer);
-
-        const tabHeaderElement = tabContainer.querySelector('.tab-header');
-        const tabLinks = tabHeaderElement.querySelectorAll('.tab-link');
-        const tabPanes = tabContainer.querySelectorAll('.tab-pane');
-        const indicator = tabContainer.querySelector('.tab-indicator');
-        const leftButton = tabContainer.querySelector('.scroll-button.left');
-        const rightButton = tabContainer.querySelector('.scroll-button.right');
-
-        let cachedWidths = [];
-        let cachedOffsets = [];
-
-        const updateIndicator = (activeLink) => {
-            const index = Array.from(tabLinks).indexOf(activeLink);
-            requestAnimationFrame(() => {
-                indicator.style.width = `${cachedWidths[index] * 0.75}px`;
-                indicator.style.left = `${cachedOffsets[index] + (cachedWidths[index] * 0.125)}px`;
+                link.classList.add('active');
+                const targetTabContent = document.querySelector(link.getAttribute('href'));
+                targetTabContent.classList.add('active');
             });
-        };
-
-        const checkScrollButtons = () => {
-            const totalWidth = cachedWidths.reduce((acc, width) => acc + width, 0);
-            const containerWidth = tabHeaderElement.offsetWidth;
-
-            requestAnimationFrame(() => {
-                const shouldShowButtons = totalWidth > containerWidth;
-                leftButton.style.display = shouldShowButtons ? 'block' : 'none';
-                rightButton.style.display = shouldShowButtons ? 'block' : 'none';
-            });
-        };
-
-        const updateLayout = () => {
-            cachedWidths = [];
-            cachedOffsets = [];
-            tabLinks.forEach((link, index) => {
-                cachedWidths[index] = link.offsetWidth;
-                cachedOffsets[index] = link.offsetLeft;
-            });
-            checkScrollButtons();
-            const activeIndex = Array.from(tabLinks).findIndex(link => link.classList.contains('active'));
-            updateIndicator(tabLinks[activeIndex]);
-        };
-
-        const resizeObserver = new ResizeObserver(updateLayout);
-        resizeObserver.observe(tabHeaderElement);
-
-        leftButton.addEventListener('click', () => {
-            tabHeaderElement.scrollBy({ left: -100, behavior: 'smooth' });
-            updateLayout();
         });
-
-        rightButton.addEventListener('click', () => {
-            tabHeaderElement.scrollBy({ left: 100, behavior: 'smooth' });
-            updateLayout();
-        });
-
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        const onMouseDown = (e) => {
-            isDown = true;
-            startX = e.pageX - tabHeaderElement.offsetLeft;
-            scrollLeft = tabHeaderElement.scrollLeft;
-        };
-
-        const onMouseUpOrLeave = () => {
-            isDown = false;
-            updateLayout();
-        };
-
-        const onMouseMove = (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - tabHeaderElement.offsetLeft;
-            const walk = (x - startX) * 2;
-            tabHeaderElement.scrollLeft = scrollLeft - walk;
-        };
-
-        tabHeaderElement.addEventListener('mousedown', onMouseDown);
-        tabHeaderElement.addEventListener('mouseleave', onMouseUpOrLeave);
-        tabHeaderElement.addEventListener('mouseup', onMouseUpOrLeave);
-        tabHeaderElement.addEventListener('mousemove', onMouseMove);
-
-        tabHeaderElement.addEventListener('touchstart', (e) => {
-            isDown = true;
-            startX = e.touches[0].pageX - tabHeaderElement.offsetLeft;
-            scrollLeft = tabHeaderElement.scrollLeft;
-        }, { passive: true });
-
-        tabHeaderElement.addEventListener('touchend', onMouseUpOrLeave, { passive: true });
-        tabHeaderElement.addEventListener('touchmove', (e) => {
-            if (!isDown) return;
-            const x = e.touches[0].pageX - tabHeaderElement.offsetLeft;
-            const walk = (x - startX) * 2;
-            tabHeaderElement.scrollLeft = scrollLeft - walk;
-        }, { passive: true });
-
-        tabHeaderElement.addEventListener('click', (event) => {
-            if (event.target.classList.contains('tab-link')) {
-                const currentIndex = Array.from(tabLinks).indexOf(event.target);
-                const previousIndex = Array.from(tabLinks).findIndex(link => link.classList.contains('active'));
-
-                tabLinks.forEach(link => link.classList.remove('active'));
-                tabPanes.forEach(pane => {
-                    pane.classList.remove('active');
-                    pane.removeAttribute('data-aos');
-                    pane.classList.remove('aos-animate');
-                });
-
-                event.target.classList.add('active');
-                const activePane = document.getElementById(event.target.getAttribute('data-tab'));
-                activePane.classList.add('active');
-
-                activePane.setAttribute('data-aos', currentIndex > previousIndex ? 'fade-left' : 'fade-right');
-
-                updateIndicator(event.target);
-
-                setTimeout(() => {
-                    activePane.classList.add('aos-animate');
-                }, 0);
-
-                if (typeof AOS !== 'undefined') {
-                    AOS.refresh();
-                }
-
-                tabLinks.forEach(link => link.setAttribute('tabindex', '-1'));
-                event.target.setAttribute('tabindex', '0');
-                event.target.focus();
-
-                const tabHeaderRect = tabHeaderElement.getBoundingClientRect();
-                const targetRect = event.target.getBoundingClientRect();
-                if (targetRect.left < tabHeaderRect.left) {
-                    tabHeaderElement.scrollBy({ left: targetRect.left - tabHeaderRect.left, behavior: 'smooth' });
-                } else if (targetRect.right > tabHeaderRect.right) {
-                    tabHeaderElement.scrollBy({ left: targetRect.right - tabHeaderRect.right, behavior: 'smooth' });
-                }
-
-                updateLayout();
-            }
-        });
-
-        updateIndicator(tabLinks[0]);
-    });
-}
-
-function initializeStickyTOC() {
-    const tocSection = document.getElementById('toc-section');
-    if (!tocSection) return;
-
-    const buffer = 50;
-    const tocAboveElements = document.querySelectorAll('.right-sidebar > *:not(#toc-section)');
-    const initialTocAboveHeight = Array.from(tocAboveElements).reduce((total, element) => total + element.offsetHeight, 0);
-    const threshold = initialTocAboveHeight + buffer;
-
-    let isTicking = false;
-
-    function onScroll() {
-        if (!isTicking) {
-            isTicking = true;
-            window.requestAnimationFrame(() => {
-                const currentScrollY = window.scrollY;
-                const shouldStick = currentScrollY >= threshold;
-                if (tocSection.classList.contains('sticky') !== shouldStick) {
-                    tocSection.classList.toggle('sticky', shouldStick);
-                }
-                isTicking = false;
-            });
-        }
-    }
-
-    window.addEventListener('scroll', onScroll);
-}
-
-
-function Comments_Submit() {
-    const submitButton = document.getElementById("submit");
-    const textarea = document.getElementById("textarea");
-
-    if (!submitButton || !textarea) return;
-
-    submitButton.addEventListener("click", () => {
-        if (textarea.value.trim() !== "") {
-            submitButton.textContent = "提交中~";
-        }
     });
 }
 
 function runShortcodes() {
-    history.scrollRestoration = 'auto'; // 不知道为什么总会回到顶端
+    handleGoTopButton();
+    generateTOC();
     parseFriendCards();
     parseCollapsiblePanels();
     parseTabs();
-    handleGoTopButton();
-    generateTOC();
-    mediumZoom('[data-zoomable]', {
-        background: 'var(--card-color)'
-    });
-    Comments_Submit()
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    runShortcodes();
-});
+// 初始化
+runShortcodes();
