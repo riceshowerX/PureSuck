@@ -95,7 +95,6 @@
     <script defer src="<?php $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
     <script defer src="<?php $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
     <script defer src="<?php $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
-    
 
     <!-- 引入 AOS -->
     <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/aos.css'); ?>">
@@ -172,6 +171,31 @@
             document.addEventListener('pjax:success', initializeCommentsOwO);
         </script>
     <?php endif; ?>
+
+    <!-- 标题线条样式 -->
+    <?php if ($this->options->postTitleAfter != 'off'): ?>
+        <style>
+            .post-title::after {
+                bottom: <?php echo $this->options->postTitleAfter == 'wavyLine' ? '-5px' : '5px'; ?>;
+                left: 0;
+                <?php if ($this->options->postTitleAfter == 'boldLine'): ?>
+                    width: 58px;
+                    height: 13px;
+                <?php elseif ($this->options->postTitleAfter == 'wavyLine'): ?>
+                    width: 80px;
+                    height: 12px;
+                    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10" viewBox="0 0 40 10" preserveAspectRatio="none"><path d="M0 5 Q 10 0, 20 5 T 40 5" stroke="black" stroke-width="2" fill="transparent"/></svg>') repeat-x;
+                    mask-size: 40px 12px;
+                <?php elseif ($this->options->postTitleAfter == 'handDrawn'): ?>
+                    width: 130px;
+                    height: 6px;
+                    background: #2a2a2a;
+                    border-radius: 6px;
+                    transform: rotate(10deg);
+                <?php endif; ?>
+            }
+        </style>
+    <?php endif; ?>
 </head>
 
 <body>
@@ -179,7 +203,7 @@
         <header class="header" data-js="header">
             <div class="wrapper header-wrapper header-title">
                 <span class="el-avatar el-avatar--circle">
-                    <img src="<?= $this->options->logoIndex; ?>" alt="博主头像" width="120" height="120">
+                    <img src="<?= $this->options->logoIndex; ?>" alt="博主头像" width="120" height="120" style="object-fit:cover;">
                 </span>
                 <div class="header-title"><?= $this->options->titleIndex(); ?></div>
                 <p class="header-item header-about"><?= $this->options->customDescription ?: 'ワクワク'; ?></p>
