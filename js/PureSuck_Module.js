@@ -1,10 +1,16 @@
 // 节流函数（throttle）
 function throttle(callback, delay) {
+    // 检查 callback 是否为函数
+    if (typeof callback !== 'function') {
+        throw new Error('Callback must be a function');
+    }
+
     let lastTime = 0;
     return function () {
-        const now = performance.now(); // 使用更高精度的性能计时器
+        const now = Date.now(); // 使用 Date.now() 提高兼容性
+        // 如果时间间隔大于等于 delay，则执行回调
         if (now - lastTime >= delay) {
-            callback();
+            requestAnimationFrame(callback); // 使用 requestAnimationFrame 来提升性能
             lastTime = now;
         }
     };
@@ -20,20 +26,21 @@ class GoTopButton {
         }
     }
 
+    // 观察页面的滚动，控制回到顶部按钮的显示与隐藏
     addObserver() {
         const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                this.goTopBtn.classList.toggle('visible', entry.boundingClientRect.top < 0);
-            });
+            let isVisible = entries.some(entry => entry.boundingClientRect.top < 0);
+            this.goTopBtn.classList.toggle('visible', isVisible); // 如果页面向上滚动，显示按钮
         });
         observer.observe(document.body);
     }
 
+    // 给回到顶部按钮添加点击事件
     addEventListeners() {
         const goTopAnchor = this.goTopBtn.querySelector('.go');
         goTopAnchor?.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            e.preventDefault(); // 防止默认行为
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // 平滑滚动到顶部
         });
     }
 }
@@ -50,6 +57,7 @@ class TOC {
         }
     }
 
+    // 生成目录
     generateTOC() {
         const elements = Array.from(this.postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
         if (!elements.length) return;
@@ -73,7 +81,6 @@ class TOC {
         fragment.appendChild(dirDiv);
 
         this.toc.appendChild(fragment);
-
         this.handleScroll(elements);
 
         if (this.tocSection) {
@@ -88,6 +95,7 @@ class TOC {
         window.dispatchEvent(new Event('scroll'));
     }
 
+    // 处理滚动时的高亮显示
     handleScroll(elements) {
         const tocItems = document.querySelectorAll(".toc li");
         const siderbar = document.querySelector(".siderbar");
@@ -109,7 +117,7 @@ class TOC {
                     anchor.classList.add("li-active");
                     const index = elements.indexOf(activeElement);
                     const sidebarTop = tocItems[index].offsetTop;
-                    siderbar.style.transform = `translateY(${sidebarTop + 4}px)`;
+                    siderbar.style.transform = `translateY(${sidebarTop + 4}px)`; // 更新侧边栏位置
                 }
             }
         }, {
@@ -119,11 +127,13 @@ class TOC {
         elements.forEach(element => observer.observe(element));
     }
 
+    // 获取元素顶部位置
     getElementTop(element) {
         const rect = element.getBoundingClientRect();
         return rect.top + window.scrollY;
     }
 
+    // 移除高亮样式
     removeClass(elements) {
         elements.forEach(element => {
             const anchor = document.querySelector(`#link-${element.id}`);
@@ -152,24 +162,21 @@ class FriendCards {
         const groups = [];
         let currentGroup = null;
 
-        while (node) {
-            if (node.nodeType === Node.ELEMENT_NODE && node.hasAttribute('friend-name')) {
+        // 使用 querySelectorAll 改进为直接查找目标元素
+        const friendNodes = Array.from(document.querySelectorAll('[friend-name]'));
+
+        friendNodes.forEach(node => {
+            if (node.hasAttribute('friend-name')) {
                 if (!currentGroup) {
                     currentGroup = [];
                     groups.push(currentGroup);
                 }
                 currentGroup.push(node);
-            } else if (node.nodeType === Node.ELEMENT_NODE ||
-                (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '')) {
+            } else {
                 currentGroup = null;
             }
+        });
 
-            if (node.firstChild) {
-                groups.push(...this.identifyGroups(node.firstChild));
-            }
-
-            node = node.nextSibling;
-        }
         return groups;
     }
 
@@ -194,9 +201,7 @@ class FriendCards {
                             <span class="friends-card-dot"></span>
                         </div>
                         <div class="friends-card-body">
-                            <div class="friends-card-text">
-                                ${node.innerHTML}
-                            </div>
+                            <div class="friends-card-text">${node.innerHTML}</div>
                             <div class="friends-card-avatar-container">
                                 <img src="${avatarUrl}" alt="Avatar" class="friends-card-avatar">
                             </div>
@@ -228,41 +233,20 @@ class CollapsiblePanels {
         const elements = document.querySelectorAll('[collapsible-panel]');
 
         elements.forEach(element => {
-            const title = element.getAttribute('title');
-            const content = element.innerHTML;
+            const title = element.getAttribute('collapsible-panel');
+            const content = element.querySelector('.panel-content');
+            
+            if (content) {
+                const button = document.createElement('button');
+                button.className = 'panel-toggle';
+                button.textContent = title;
+                
+                button.addEventListener('click', () => {
+                    content.classList.toggle('collapsed');
+                });
 
-            const newContent = `<div class="collapsible-panel">
-                <button class="collapsible-header">
-                    ${title}
-                    <span class="icon icon-down-open"></span>
-                </button>
-                <div class="collapsible-content" style="max-height: 0; overflow: hidden; transition: all .4s cubic-bezier(0.345, 0.045, 0.345, 1);">
-                    <div class="collapsible-details">${content}</div>
-                </div>
-            </div>`;
-
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = newContent;
-            const newPanel = tempDiv.firstChild;
-
-            const button = newPanel.querySelector('.collapsible-header');
-            const contentDiv = newPanel.querySelector('.collapsible-content');
-            const icon = button.querySelector('.icon');
-
-            button.addEventListener('click', function () {
-                this.classList.toggle('active');
-                if (contentDiv.style.maxHeight && contentDiv.style.maxHeight !== '0px') {
-                    contentDiv.style.maxHeight = '0px';
-                    icon.classList.remove('icon-up-open');
-                    icon.classList.add('icon-down-open');
-                } else {
-                    contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
-                    icon.classList.remove('icon-down-open');
-                    icon.classList.add('icon-up-open');
-                }
-            });
-
-            element.parentNode.replaceChild(newPanel, element);
+                element.insertBefore(button, content);
+            }
         });
     }
 }
