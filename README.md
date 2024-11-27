@@ -1,8 +1,8 @@
 
-# PureSuck-Theme
+# PureSuck-Theme (个人魔改版)
 
 > 原作者仓库：[MoXiaoXi233/PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)  
-> 魔改版：魔改半成品慎用,[案例](https://miksz.cc)
+> 魔改版：个人二次开发版，[案例](https://rice-shower.com)
 
 ![Banner](https://s2.loli.net/2024/08/05/M4FTuyI2b7aU3Ag.png)
 ![Release Badge](https://img.shields.io/github/v/release/MoXiaoXi233/PureSuck-theme)
@@ -10,13 +10,13 @@
 ![Author Badge](https://img.shields.io/badge/AUTHOR-MoXiify-pink)
 
 PureSuck 是一个**干净、简约、优雅**的 Typecho 主题。  
-这是我第一次认真做一个项目，如果遇到问题或有建议，欢迎反馈。主题的样式和功能还在不断迭代中，可能会随着版本更新而发生变化。感谢你的使用！
+本版本为个人魔改版，基于原作者的 PureSuck 主题进行了一些定制和优化。主题的样式和功能在持续迭代中，可能会随着版本更新而发生变化。感谢你的使用！
 
 ## 外观展示
 
-你可以前往 [希记](https://note.moxiify.cn) 查看最新版的演示效果。
+你可以前往 [我的博客](https://rice-shower.com) 查看最新版的演示效果。
 
-主题提供四种可选的强调色，并内置了几种多彩的小组件，欢迎通过 Issues 提交建议！
+主题提供了灵活的自定义选项，包括多种强调色和小组件，可以根据自己的需求进行调整。
 
 ![PureSuck](https://s2.loli.net/2024/09/12/D8pVAM5QkwJzdjO.png)
 
@@ -29,15 +29,15 @@ PureSuck 是一个**干净、简约、优雅**的 Typecho 主题。
 
 ## 特性
 
-- **代码高亮**  
-- 精美的动效设计  
-- **简约干净的界面**  
-- 灵活的自定义空间  
-- **良好的阅读体验**  
-- TOC 目录树  
-- 头图支持  
-- **流畅的体验**  
-- 内置多个小组件  
+- **代码高亮**
+- 精美的动效设计
+- **简约干净的界面**
+- 灵活的自定义空间
+- **良好的阅读体验**
+- TOC 目录树
+- 头图支持
+- **流畅的体验**
+- 内置多个小组件
 - ~~作者人比较好，愿意陪你瞎扯~~
 
 更多功能和细节，欢迎体验主题！
