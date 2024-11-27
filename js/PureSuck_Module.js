@@ -11,146 +11,144 @@ function throttle(callback, delay) {
 }
 
 // 回到顶部按钮
-function handleGoTopButton() {
-    const goTopBtn = document.getElementById('go-top');
-    if (!goTopBtn) {
-        console.warn('回到顶部按钮元素不存在');
-        return;
-    }
-
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            goTopBtn.classList.toggle('visible', entry.boundingClientRect.top < 0);
-        });
-    });
-    observer.observe(document.body);
-
-    const goTopAnchor = document.querySelector('#go-top .go');
-    goTopAnchor?.addEventListener('click', function (e) {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-}
-
-// 生成 TOC 目录
-function generateTOC() {
-    const tocSection = document.getElementById("toc-section");
-    const toc = document.querySelector(".toc");
-    const postWrapper = document.querySelector(".inner-post-wrapper");
-
-    if (!toc || !postWrapper) return;
-
-    const elements = Array.from(postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-    if (!elements.length) return;
-
-    const fragment = document.createDocumentFragment();
-    const ul = document.createElement('ul');
-    ul.id = 'toc';
-
-    elements.forEach((element, index) => {
-        element.id = element.id || `heading-${index}`;
-        const li = document.createElement('li');
-        li.className = `li li-${element.tagName[1]}`;
-        li.innerHTML = `<a href="#${element.id}" id="link-${element.id}" class="toc-a">${element.textContent}</a>`;
-        ul.appendChild(li);
-    });
-
-    const dirDiv = document.createElement('div');
-    dirDiv.className = 'dir';
-    dirDiv.appendChild(ul);
-    dirDiv.innerHTML += `<div class="sider"><span class="siderbar"></span></div>`;
-    fragment.appendChild(dirDiv);
-
-    toc.appendChild(fragment);
-
-    handleScroll(elements);
-
-    if (tocSection) {
-        tocSection.style.display = "block";
-        const rightSidebar = document.querySelector(".right-sidebar");
-        if (rightSidebar) {
-            rightSidebar.style.position = "absolute";
-            rightSidebar.style.top = "0";
+class GoTopButton {
+    constructor() {
+        this.goTopBtn = document.getElementById('go-top');
+        if (this.goTopBtn) {
+            this.addObserver();
+            this.addEventListeners();
         }
     }
-    window.dispatchEvent(new Event('scroll'));
-}
 
-// 获取元素顶部位置
-function getElementTop(element) {
-    const rect = element.getBoundingClientRect();
-    return rect.top + window.scrollY;
-}
-
-// 移除 TOC 目录项的活动类
-function removeClass(elements) {
-    elements.forEach(element => {
-        const anchor = document.querySelector(`#link-${element.id}`);
-        if (anchor) {
-            anchor.classList.remove("li-active");
-        }
-    });
-}
-
-// 处理滚动事件，更新 TOC 目录高亮
-function handleScroll(elements) {
-    let ticking = false;
-    const tocItems = document.querySelectorAll(".toc li");
-    const siderbar = document.querySelector(".siderbar");
-
-    const elementTops = elements.map(element => getElementTop(element));
-
-    window.addEventListener("scroll", throttle(() => {
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                const currentPosition = window.scrollY;
-                let activeElement = null;
-
-                elements.forEach((element, index) => {
-                    const targetTop = elementTops[index];
-                    const elementHeight = element.offsetHeight;
-                    const offset = elementHeight / 2;
-
-                    const nextElement = elements[index + 1];
-                    const nextTargetTop = nextElement ? elementTops[index + 1] : Number.MAX_SAFE_INTEGER;
-
-                    if (currentPosition + offset >= targetTop && currentPosition + offset < nextTargetTop) {
-                        activeElement = element;
-                    }
-                });
-
-                if (!activeElement && elements.length > 0) {
-                    activeElement = elements[0];
-                }
-
-                if (activeElement) {
-                    removeClass(elements);
-                    const anchor = document.querySelector(`#link-${activeElement.id}`);
-                    if (anchor) {
-                        anchor.classList.add("li-active");
-
-                        const index = elements.indexOf(activeElement);
-                        const sidebarTop = tocItems[index].offsetTop;
-                        siderbar.style.transform = `translateY(${sidebarTop + 4}px)`;
-                    }
-                }
-
-                ticking = false;
+    addObserver() {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                this.goTopBtn.classList.toggle('visible', entry.boundingClientRect.top < 0);
             });
-            ticking = true;
+        });
+        observer.observe(document.body);
+    }
+
+    addEventListeners() {
+        const goTopAnchor = this.goTopBtn.querySelector('.go');
+        goTopAnchor?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+}
+
+// TOC 目录生成
+class TOC {
+    constructor() {
+        this.tocSection = document.getElementById("toc-section");
+        this.toc = document.querySelector(".toc");
+        this.postWrapper = document.querySelector(".inner-post-wrapper");
+
+        if (this.toc && this.postWrapper) {
+            this.generateTOC();
         }
-    }, 100)); // 使用节流（throttle）来减少滚动事件触发频率
+    }
+
+    generateTOC() {
+        const elements = Array.from(this.postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+        if (!elements.length) return;
+
+        const fragment = document.createDocumentFragment();
+        const ul = document.createElement('ul');
+        ul.id = 'toc';
+
+        elements.forEach((element, index) => {
+            element.id = element.id || `heading-${index}`;
+            const li = document.createElement('li');
+            li.className = `li li-${element.tagName[1]}`;
+            li.innerHTML = `<a href="#${element.id}" id="link-${element.id}" class="toc-a">${element.textContent}</a>`;
+            ul.appendChild(li);
+        });
+
+        const dirDiv = document.createElement('div');
+        dirDiv.className = 'dir';
+        dirDiv.appendChild(ul);
+        dirDiv.innerHTML += `<div class="sider"><span class="siderbar"></span></div>`;
+        fragment.appendChild(dirDiv);
+
+        this.toc.appendChild(fragment);
+
+        this.handleScroll(elements);
+
+        if (this.tocSection) {
+            this.tocSection.style.display = "block";
+            const rightSidebar = document.querySelector(".right-sidebar");
+            if (rightSidebar) {
+                rightSidebar.style.position = "absolute";
+                rightSidebar.style.top = "0";
+            }
+        }
+
+        window.dispatchEvent(new Event('scroll'));
+    }
+
+    handleScroll(elements) {
+        const tocItems = document.querySelectorAll(".toc li");
+        const siderbar = document.querySelector(".siderbar");
+
+        const elementTops = elements.map(element => this.getElementTop(element));
+
+        const observer = new IntersectionObserver(entries => {
+            let activeElement = null;
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    activeElement = entry.target;
+                }
+            });
+
+            if (activeElement) {
+                this.removeClass(elements);
+                const anchor = document.querySelector(`#link-${activeElement.id}`);
+                if (anchor) {
+                    anchor.classList.add("li-active");
+                    const index = elements.indexOf(activeElement);
+                    const sidebarTop = tocItems[index].offsetTop;
+                    siderbar.style.transform = `translateY(${sidebarTop + 4}px)`;
+                }
+            }
+        }, {
+            rootMargin: '0px 0px -50% 0px' // 提前触发高亮
+        });
+
+        elements.forEach(element => observer.observe(element));
+    }
+
+    getElementTop(element) {
+        const rect = element.getBoundingClientRect();
+        return rect.top + window.scrollY;
+    }
+
+    removeClass(elements) {
+        elements.forEach(element => {
+            const anchor = document.querySelector(`#link-${element.id}`);
+            if (anchor) {
+                anchor.classList.remove("li-active");
+            }
+        });
+    }
 }
 
 // 解析朋友卡片
-function parseFriendCards() {
-    const container = document.body;
-    const fragment = document.createDocumentFragment();
+class FriendCards {
+    constructor() {
+        this.container = document.body;
+        this.parseFriendCards();
+    }
 
-    function identifyGroups(node) {
+    parseFriendCards() {
+        const fragment = document.createDocumentFragment();
+        const groups = this.identifyGroups(this.container.firstChild);
+        this.replaceGroups(groups);
+        this.container.appendChild(fragment);
+    }
+
+    identifyGroups(node) {
         const groups = [];
         let currentGroup = null;
 
@@ -167,7 +165,7 @@ function parseFriendCards() {
             }
 
             if (node.firstChild) {
-                groups.push(...identifyGroups(node.firstChild));
+                groups.push(...this.identifyGroups(node.firstChild));
             }
 
             node = node.nextSibling;
@@ -175,7 +173,7 @@ function parseFriendCards() {
         return groups;
     }
 
-    function replaceGroups(groups) {
+    replaceGroups(groups) {
         groups.forEach(group => {
             if (group.length > 0) {
                 const friendsBoardList = document.createElement('div');
@@ -218,84 +216,90 @@ function parseFriendCards() {
             }
         });
     }
-
-    const groups = identifyGroups(container.firstChild);
-    replaceGroups(groups);
-
-    container.appendChild(fragment);
 }
 
 // 解析可折叠面板
-function parseCollapsiblePanels() {
-    const elements = document.querySelectorAll('[collapsible-panel]');
+class CollapsiblePanels {
+    constructor() {
+        this.parseCollapsiblePanels();
+    }
 
-    elements.forEach(element => {
-        const title = element.getAttribute('title');
-        const content = element.innerHTML;
+    parseCollapsiblePanels() {
+        const elements = document.querySelectorAll('[collapsible-panel]');
 
-        const newContent = `<div class="collapsible-panel">
-            <button class="collapsible-header">
-                ${title}
-                <span class="icon icon-down-open"></span>
-            </button>
-            <div class="collapsible-content" style="max-height: 0; overflow: hidden; transition: all .4s cubic-bezier(0.345, 0.045, 0.345, 1);">
-                <div class="collapsible-details">${content}</div>
-            </div>
-        </div>`;
+        elements.forEach(element => {
+            const title = element.getAttribute('title');
+            const content = element.innerHTML;
 
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = newContent;
-        const newPanel = tempDiv.firstChild;
+            const newContent = `<div class="collapsible-panel">
+                <button class="collapsible-header">
+                    ${title}
+                    <span class="icon icon-down-open"></span>
+                </button>
+                <div class="collapsible-content" style="max-height: 0; overflow: hidden; transition: all .4s cubic-bezier(0.345, 0.045, 0.345, 1);">
+                    <div class="collapsible-details">${content}</div>
+                </div>
+            </div>`;
 
-        const button = newPanel.querySelector('.collapsible-header');
-        const contentDiv = newPanel.querySelector('.collapsible-content');
-        const icon = button.querySelector('.icon');
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newContent;
+            const newPanel = tempDiv.firstChild;
 
-        button.addEventListener('click', function () {
-            this.classList.toggle('active');
+            const button = newPanel.querySelector('.collapsible-header');
+            const contentDiv = newPanel.querySelector('.collapsible-content');
+            const icon = button.querySelector('.icon');
 
-            if (contentDiv.style.maxHeight && contentDiv.style.maxHeight !== '0px') {
-                contentDiv.style.maxHeight = '0px';
-                icon.classList.remove('icon-up-open');
-                icon.classList.add('icon-down-open');
-            } else {
-                contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
-                icon.classList.remove('icon-down-open');
-                icon.classList.add('icon-up-open');
-            }
+            button.addEventListener('click', function () {
+                this.classList.toggle('active');
+                if (contentDiv.style.maxHeight && contentDiv.style.maxHeight !== '0px') {
+                    contentDiv.style.maxHeight = '0px';
+                    icon.classList.remove('icon-up-open');
+                    icon.classList.add('icon-down-open');
+                } else {
+                    contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
+                    icon.classList.remove('icon-down-open');
+                    icon.classList.add('icon-up-open');
+                }
+            });
+
+            element.parentNode.replaceChild(newPanel, element);
         });
-
-        element.parentNode.replaceChild(newPanel, element);
-    });
+    }
 }
 
 // 解析选项卡
-function parseTabs() {
-    const tabContainers = document.querySelectorAll('.tabs');
+class Tabs {
+    constructor() {
+        this.parseTabs();
+    }
 
-    tabContainers.forEach(container => {
-        const tabs = Array.from(container.querySelectorAll('.tab'));
-        const contentSections = Array.from(container.querySelectorAll('.tab-content'));
+    parseTabs() {
+        const tabContainers = document.querySelectorAll('.tabs');
 
-        tabs.forEach((tab, index) => {
-            tab.removeEventListener('click', tabClickHandler);  // 移除旧事件
-            tab.addEventListener('click', function () {
-                tabs.forEach(t => t.classList.remove('active'));
-                contentSections.forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                contentSections[index].classList.add('active');
+        tabContainers.forEach(container => {
+            const tabs = Array.from(container.querySelectorAll('.tab'));
+            const contentSections = Array.from(container.querySelectorAll('.tab-content'));
+
+            tabs.forEach((tab, index) => {
+                tab.removeEventListener('click', this.tabClickHandler);  // 移除旧事件
+                tab.addEventListener('click', function () {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contentSections.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    contentSections[index].classList.add('active');
+                });
             });
         });
+    }
 
-        function tabClickHandler() {}
-    });
+    tabClickHandler() {}
 }
 
 // 页面加载完成后初始化功能
-document.addEventListener('DOMContentLoaded', function () {
-    handleGoTopButton();
-    generateTOC();
-    parseFriendCards();
-    parseCollapsiblePanels();
-    parseTabs();
+document.addEventListener('DOMContentLoaded', () => {
+    new GoTopButton();
+    new TOC();
+    new FriendCards();
+    new CollapsiblePanels();
+    new Tabs();
 });
