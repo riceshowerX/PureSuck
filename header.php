@@ -22,28 +22,80 @@
     <!-- 动态生成 CSS -->
     <?php generateDynamicCSS(); ?>
 
-    <!-- 主题初始化脚本 -->
+    <!-- 引入样式和脚本 -->
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Style.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/a11y-dark.min.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Module.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/MoxDesign.css'); ?>">
+
+    <!-- 标题线条样式 -->
+    <style>
+        .post-title::after {
+            content: '';
+            position: absolute;
+            display: block;
+            background: #2a2a2a;
+            bottom: 5px;
+            left: 0;
+            <?php if ($this->options->postTitleAfter == 'boldLine'): ?>
+                width: 58px;
+                height: 13px;
+            <?php elseif ($this->options->postTitleAfter == 'wavyLine'): ?>
+                width: 80px;
+                height: 12px;
+                bottom: -5px;
+                mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10" viewBox="0 0 40 10" preserveAspectRatio="none"><path d="M0 5 Q 10 0, 20 5 T 40 5" stroke="black" stroke-width="2" fill="transparent"/></svg>') repeat-x;
+                mask-size: 40px 12px;
+            <?php elseif ($this->options->postTitleAfter == 'handDrawn'): ?>
+                width: 130px;
+                height: 6px;
+                border-radius: 6px;
+                transform: rotate(10deg);
+            <?php endif; ?>
+        }
+    </style>
+
+    <!-- AOS 样式和脚本 -->
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/aos.css'); ?>">
+    <script defer src="<?= $this->options->themeUrl('/js/aos.js'); ?>"></script>
+
+    <!-- 引入其他必要脚本 -->
+    <script defer src="<?= $this->options->themeUrl('/js/medium-zoom.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/highlight.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
+
     <script>
+        // 更新图标 (全局函数，包含 null 检查)
+        function updateIcon(theme) {
+            const iconElement = document.getElementById('theme-icon');
+            if (iconElement) {
+                iconElement.className = {
+                    light: 'icon-sun-inv',
+                    dark: 'icon-moon-inv',
+                    auto: 'icon-auto'
+                }[theme] || 'icon-auto';
+            }
+        }
+
+        // 主题初始化脚本 (立即执行函数)
         (function() {
-            // 初始化主题
             const savedTheme = localStorage.getItem('theme') || 'auto';
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const initialTheme = savedTheme === 'auto' ? systemTheme : savedTheme;
             document.documentElement.setAttribute('data-theme', initialTheme);
 
-            // 更新图标
             updateIcon(initialTheme);
 
-            // 监听系统主题变化
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
                 if (localStorage.getItem('theme') === 'auto') {
                     const newTheme = e.matches ? 'dark' : 'light';
                     document.documentElement.setAttribute('data-theme', newTheme);
-                    updateIcon('auto');
+                    updateIcon(newTheme);
                 }
             });
 
-            // 设置主题
             function setTheme(theme) {
                 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 const appliedTheme = theme === 'auto' ? systemTheme : theme;
@@ -52,7 +104,6 @@
                 updateIcon(theme);
             }
 
-            // 切换主题
             window.toggleTheme = function() {
                 const currentTheme = localStorage.getItem('theme') || 'auto';
                 const nextTheme = currentTheme === 'light' ? 'dark' : (currentTheme === 'dark' ? 'auto' : 'light');
@@ -66,124 +117,70 @@
 
                 MoxToast({ message: messages[nextTheme] });
             };
-
-            // 更新图标
-            function updateIcon(theme) {
-                const iconElement = document.getElementById('theme-icon');
-                if (iconElement) {
-                    iconElement.className = {
-                        light: 'icon-sun-inv',
-                        dark: 'icon-moon-inv',
-                        auto: 'icon-auto'
-                    }[theme] || 'icon-auto';
-                }
-            }
         })();
+
+
+        // OwO 初始化函数 (全局函数)
+        function initializeCommentsOwO() {
+            const textarea = document.querySelector('.OwO-textarea');
+            const container = document.querySelector('.OwO-container');
+
+            if (textarea && container) {
+                new OwO({
+                    logo: '表情',
+                    container: container,
+                    target: textarea,
+                    api: '<?php $this->options->themeUrl("/json/OwO.json"); ?>',
+                    position: 'down',
+                    width: '100%',
+                    maxHeight: '250px'
+                });
+            }
+        }
     </script>
 
-    <!-- 引入样式和脚本 -->
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Style.css'); ?>">
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/a11y-dark.min.css'); ?>">
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Module.css'); ?>">
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/MoxDesign.css'); ?>">
 
-    <!-- AOS 样式和脚本 -->
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/aos.css'); ?>">
-    <script defer src="<?= $this->options->themeUrl('/js/aos.js'); ?>"></script>
 
-    <!-- 引入其他必要脚本 -->
-    <script defer src="<?= $this->options->themeUrl('/js/medium-zoom.min.js'); ?>"></script>
-    <script defer src="<?= $this->options->themeUrl('/js/highlight.min.js'); ?>"></script>
-    <script defer src="<?= $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
-    <script defer src="<?= $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
-    <script defer src="<?= $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
-
-    <!-- Pjax 支持 -->
+       <!-- Pjax 支持 -->
     <?php if ($this->options->enablepjax == '1'): ?>
         <script defer src="<?= $this->options->themeUrl('/js/pjax.min.js'); ?>"></script>
         <script>
+            // PJAX 初始化及事件处理
             document.addEventListener('DOMContentLoaded', () => {
+                // 初始化 Pjax
+                // 移除 .right-sidebar 以解决 DOM 差异问题
                 new Pjax({
                     history: true,
                     cacheBust: false,
                     timeout: 6500,
                     elements: 'a[href^="<?php Helper::options()->siteUrl() ?>"]:not([target="_blank"], [no-pjax]), form[action]',
-                    selectors: ["pjax", "script[data-pjax]", "title", ".main", ".right-sidebar"]
+                    selectors: ["pjax", "script[data-pjax]", "title", ".main"] 
                 });
 
+                // 处理 PJAX 错误
                 document.addEventListener('pjax:error', (e) => {
+                    MoxToast({
+                        message: "页面加载失败，请稍后重试",
+                        type: 'danger'
+                    });
                     console.error(e);
-                    window.location.href = e.triggerElement.href;
                 });
 
+                // 处理 PJAX 成功加载
                 document.addEventListener("pjax:success", () => {
                     AOS.refresh();
+                    initializeCommentsOwO();
+                    updateIcon(localStorage.getItem('theme') || 'auto');
                 });
+
+                // 在初始加载时初始化 OwO
+                initializeCommentsOwO();
             });
-
-            // 初始化评论框的 OwO 表情
-            document.addEventListener('DOMContentLoaded', function () {
-    // 初始化 OwO 表情
-    initializeCommentsOwO();
-});
-
-document.addEventListener('pjax:success', function () {
-    // PJAX 成功后也重新初始化 OwO 表情
-    initializeCommentsOwO();
-});
-
-// 使用 MutationObserver 确保页面加载完毕时初始化 OwO 表情
-function initializeCommentsOwO() {
-    const observer = new MutationObserver(function (mutations, observer) {
-        const container = document.querySelector('.OwO-container');
-        const textarea = document.querySelector('.OwO-textarea');
-
-        if (container && textarea) {
-            new OwO({
-                logo: '表情',
-                container: container,
-                target: textarea,
-                api: '<?php $this->options->themeUrl("/json/OwO.json"); ?>',
-                position: 'down',
-                width: '100%',
-                maxHeight: '250px'
-            });
-            console.log('OwO 初始化成功');
-            observer.disconnect(); // 停止观察，避免重复初始化
-        }
-    });
-
-    // 观察整个文档变化
-    observer.observe(document.body, { childList: true, subtree: true });
-}
-
         </script>
     <?php endif; ?>
 
-    <!-- 标题线条样式 -->
-    <?php if ($this->options->postTitleAfter != 'off'): ?>
-        <style>
-            .post-title::after {
-                bottom: <?php echo $this->options->postTitleAfter == 'wavyLine' ? '-5px' : '5px'; ?>;
-                left: 0;
-                <?php if ($this->options->postTitleAfter == 'boldLine'): ?>
-                    width: 58px;
-                    height: 13px;
-                <?php elseif ($this->options->postTitleAfter == 'wavyLine'): ?>
-                    width: 80px;
-                    height: 12px;
-                    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10" viewBox="0 0 40 10" preserveAspectRatio="none"><path d="M0 5 Q 10 0, 20 5 T 40 5" stroke="black" stroke-width="2" fill="transparent"/></svg>') repeat-x;
-                    mask-size: 40px 12px;
-                <?php elseif ($this->options->postTitleAfter == 'handDrawn'): ?>
-                    width: 130px;
-                    height: 6px;
-                    background: #2a2a2a;
-                    border-radius: 6px;
-                    transform: rotate(10deg);
-                <?php endif; ?>
-            }
-        </style>
-    <?php endif; ?>
+
+
 </head>
 
 <body>
