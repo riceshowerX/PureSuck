@@ -2,7 +2,7 @@
 # PureSuck-Theme (个人魔改版)
 
 > 原作者仓库：[MoXiaoXi233/PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)  
-> 魔改版：个人二次开发版，[案例](https://rice-shower.com)
+> 魔改版：个人二次开发版，[案例](https://miksz.cc)
 
 ![Banner](https://s2.loli.net/2024/08/05/M4FTuyI2b7aU3Ag.png)
 ![Release Badge](https://img.shields.io/github/v/release/MoXiaoXi233/PureSuck-theme)
