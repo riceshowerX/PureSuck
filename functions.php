@@ -1,16 +1,40 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+/**
+ * 为主题设置文章头图和摘要字段
+ *
+ * @param Typecho_Widget_Helper_Form $layout
+ */
 function themeFields($layout)
 {
-    $img = new Typecho_Widget_Helper_Form_Element_Text('img', NULL, NULL, _t('文章头图'), _t('输入文章头图的 URL 地址，为空则不显示'));
-    $img->input->setAttribute('class', 'text w-100');
+    // 创建文章头图输入框
+    $img = createTextField('img', _t('文章头图'), _t('输入文章头图的 URL 地址，为空则不显示'));
     $layout->addItem($img);
 
-    $desc = new Typecho_Widget_Helper_Form_Element_Text('desc', NULL, NULL, _t('文章摘要'), _t('文章摘要信息，会显示在首页文章卡片内，为空则默认显示文章开头一段文字'));
-    $desc->input->setAttribute('class', 'text w-100');
+    // 创建文章摘要输入框
+    $desc = createTextField('desc', _t('文章摘要'), _t('文章摘要信息，会显示在首页文章卡片内，为空则默认显示文章开头一段文字'));
     $layout->addItem($desc);
 }
+
+/**
+ * 创建文本字段的帮助方法
+ *
+ * @param string $name 字段名称
+ * @param string $label 字段标签
+ * @param string $description 字段描述
+ * @return Typecho_Widget_Helper_Form_Element_Text
+ */
+function createTextField($name, $label, $description)
+{
+    // 创建一个文本输入字段
+    $field = new Typecho_Widget_Helper_Form_Element_Text($name, NULL, NULL, $label, $description);
+    // 设置样式
+    $field->input->setAttribute('class', 'text w-100');
+    return $field;
+}
+
+
 
 function themeInit($archive)
 {
@@ -54,23 +78,27 @@ function parseOwOcodes($content)
 
 function themeConfig($form)
 {
-    # 主题信息及功能
+    // 主题信息及功能
     $str1 = explode('/themes/', Helper::options()->themeUrl);
     $str2 = explode('/', $str1[1]);
     $name = $str2[0];
     $db = Typecho_Db::get();
     $sjdq = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $name));
     $ysj = $sjdq['value'];
+
+    // 处理表单提交
     if (isset($_POST['type'])) {
         if ($_POST["type"] == "备份模板设置数据") {
             if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $name . 'bf'))) {
                 $update = $db->update('table.options')->rows(array('value' => $ysj))->where('name = ?', 'theme:' . $name . 'bf');
                 $updateRows = $db->query($update);
                 echo '<div class="tongzhi home">备份已更新，请等待自动刷新！如果等不到请点击';
-?>
+                ?>
                 <a href="<?php Helper::options()->adminUrl('options-theme.php'); ?>">这里</a></div>
                 <script language="JavaScript">
-                    window.setTimeout("location=\'<?php Helper::options()->adminUrl('options-theme.php'); ?>\'", 2500);
+                    window.setTimeout(function() {
+                        location = '<?php echo Helper::options()->adminUrl('options-theme.php'); ?>';
+                    }, 2500);
                 </script>
                 <?php
             } else {
@@ -79,15 +107,18 @@ function themeConfig($form)
                         ->rows(array('name' => 'theme:' . $name . 'bf', 'user' => '0', 'value' => $ysj));
                     $insertId = $db->query($insert);
                     echo '<div class="tongzhi home">备份完成，请等待自动刷新！如果等不到请点击';
-                ?>
+                    ?>
                     <a href="<?php Helper::options()->adminUrl('options-theme.php'); ?>">这里</a></div>
                     <script language="JavaScript">
-                        window.setTimeout("location=\'<?php Helper::options()->adminUrl('options-theme.php'); ?>\'", 2500);
+                        window.setTimeout(function() {
+                            location = '<?php echo Helper::options()->adminUrl('options-theme.php'); ?>';
+                        }, 2500);
                     </script>
-                <?php
+                    <?php
                 }
             }
         }
+
         if ($_POST["type"] == "还原模板设置数据") {
             if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $name . 'bf'))) {
                 $sjdub = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $name . 'bf'));
@@ -98,24 +129,29 @@ function themeConfig($form)
                 ?>
                 <a href="<?php Helper::options()->adminUrl('options-theme.php'); ?>">这里</a></div>
                 <script language="JavaScript">
-                    window.setTimeout("location=\'<?php Helper::options()->adminUrl('options-theme.php'); ?>\'", 2000);
+                    window.setTimeout(function() {
+                        location = '<?php echo Helper::options()->adminUrl('options-theme.php'); ?>';
+                    }, 2000);
                 </script>
-            <?php
+                <?php
             } else {
                 echo '<div class="tongzhi home">没有模板备份数据，恢复不了哦！</div>';
             }
         }
+
         if ($_POST["type"] == "删除备份数据") {
             if ($db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $name . 'bf'))) {
                 $delete = $db->delete('table.options')->where('name = ?', 'theme:' . $name . 'bf');
                 $deletedRows = $db->query($delete);
                 echo '<div class="tongzhi home">删除成功，请等待自动刷新，如果等不到请点击';
-            ?>
+                ?>
                 <a href="<?php Helper::options()->adminUrl('options-theme.php'); ?>">这里</a></div>
                 <script language="JavaScript">
-                    window.setTimeout("location=\'<?php Helper::options()->adminUrl('options-theme.php'); ?>\'", 2500);
+                    window.setTimeout(function() {
+                        location = '<?php echo Helper::options()->adminUrl('options-theme.php'); ?>';
+                    }, 2500);
                 </script>
-<?php
+                <?php
             } else {
                 echo '<div class="tongzhi home">不用删了！备份不存在！！！</div>';
             }
