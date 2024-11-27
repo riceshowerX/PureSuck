@@ -2,7 +2,7 @@
 # PureSuck-Theme (个人魔改版)
 
 > 原作者仓库：[MoXiaoXi233/PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)  
-> 魔改版：个人二次开发版，[案例](https://miksz.cc)
+> 魔改版：个人二次开发版，[演示](https://miksz.cc)
 
 ![Banner](https://s2.loli.net/2024/08/05/M4FTuyI2b7aU3Ag.png)
 ![Release Badge](https://img.shields.io/github/v/release/MoXiaoXi233/PureSuck-theme)
@@ -14,7 +14,7 @@ PureSuck 是一个**干净、简约、优雅**的 Typecho 主题。
 
 ## 外观展示
 
-你可以前往 [希记](https://note.moxiify.cn) 查看最新版的演示效果。
+你可以前往 [希记](https://note.moxiify.cn) 查看PureSuck-Theme作者最新版的演示效果。
 
 主题提供了灵活的自定义选项，包括多种强调色和小组件，可以根据自己的需求进行调整。
 
