@@ -25,93 +25,82 @@
     <!-- 主题初始化脚本 -->
     <script>
         (function() {
+            // 初始化主题
             const savedTheme = localStorage.getItem('theme') || 'auto';
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const initialTheme = savedTheme === 'auto' ? systemTheme : savedTheme;
             document.documentElement.setAttribute('data-theme', initialTheme);
+
+            // 更新图标
+            updateIcon(initialTheme);
+
+            // 监听系统主题变化
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (localStorage.getItem('theme') === 'auto') {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    updateIcon('auto');
+                }
+            });
+
+            // 设置主题
+            function setTheme(theme) {
+                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                const appliedTheme = theme === 'auto' ? systemTheme : theme;
+                document.documentElement.setAttribute('data-theme', appliedTheme);
+                localStorage.setItem('theme', theme);
+                updateIcon(theme);
+            }
+
+            // 切换主题
+            window.toggleTheme = function() {
+                const currentTheme = localStorage.getItem('theme') || 'auto';
+                const nextTheme = currentTheme === 'light' ? 'dark' : (currentTheme === 'dark' ? 'auto' : 'light');
+                setTheme(nextTheme);
+
+                const messages = {
+                    light: "已切换至浅色模式",
+                    dark: "已切换至深色模式",
+                    auto: "模式将跟随系统 ㆆᴗㆆ"
+                };
+
+                MoxToast({ message: messages[nextTheme] });
+            };
+
+            // 更新图标
+            function updateIcon(theme) {
+                const iconElement = document.getElementById('theme-icon');
+                if (iconElement) {
+                    iconElement.className = {
+                        light: 'icon-sun-inv',
+                        dark: 'icon-moon-inv',
+                        auto: 'icon-auto'
+                    }[theme] || 'icon-auto';
+                }
+            }
         })();
     </script>
 
-    <!-- 切换主题功能 -->
-    <script>
-        function setTheme(theme) {
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const appliedTheme = theme === 'auto' ? systemTheme : theme;
+    <!-- 引入样式和脚本 -->
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Style.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/a11y-dark.min.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/PureSuck_Module.css'); ?>">
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/MoxDesign.css'); ?>">
 
-            document.documentElement.setAttribute('data-theme', appliedTheme);
-            localStorage.setItem('theme', theme);
+    <!-- AOS 样式和脚本 -->
+    <link rel="stylesheet" href="<?= $this->options->themeUrl('/css/aos.css'); ?>">
+    <script defer src="<?= $this->options->themeUrl('/js/aos.js'); ?>"></script>
 
-            updateIcon(theme);
-        }
-
-        function toggleTheme() {
-            const currentTheme = localStorage.getItem('theme') || 'auto';
-            const nextTheme = currentTheme === 'light' ? 'dark' : (currentTheme === 'dark' ? 'auto' : 'light');
-
-            setTheme(nextTheme);
-
-            const messages = {
-                light: "已切换至浅色模式",
-                dark: "已切换至深色模式",
-                auto: "模式将跟随系统 ㆆᴗㆆ"
-            };
-
-            MoxToast({ message: messages[nextTheme] });
-        }
-
-        function updateIcon(theme) {
-            const iconElement = document.getElementById('theme-icon');
-            if (iconElement) {
-                iconElement.className = {
-                    light: 'icon-sun-inv',
-                    dark: 'icon-moon-inv',
-                    auto: 'icon-auto'
-                }[theme] || 'icon-auto';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setTheme(localStorage.getItem('theme') || 'auto');
-        });
-
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (localStorage.getItem('theme') === 'auto') {
-                const newTheme = e.matches ? 'dark' : 'light';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                updateIcon('auto');
-            }
-        });
-    </script>
-
-    <!-- 样式和脚本引入 -->
-    <link rel="stylesheet" href="<?= $this->options->themeUrl('css/PureSuck_Style.css'); ?>">
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/a11y-dark.min.css'); ?>">
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/PureSuck_Module.css'); ?>">
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/aos.css'); ?>">
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/MoxDesign.css'); ?>">
-
-    <script defer src="<?php $this->options->themeUrl('/js/medium-zoom.min.js'); ?>"></script>
-    <script defer src="<?php $this->options->themeUrl('/js/highlight.min.js'); ?>"></script>
-    <script defer src="<?php $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
-    <script defer src="<?php $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
-    <script defer src="<?php $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
-
-    <!-- 引入 AOS -->
-    <link rel="stylesheet" href="<?php $this->options->themeUrl('/css/aos.css'); ?>">
-    <script defer src="<?php $this->options->themeUrl('/js/aos.js'); ?>"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            AOS.init({ duration: 800, offset: 120 });
-        });
-
-        document.addEventListener("pjax:success", function() {
-            AOS.init({ duration: 800, offset: 120 });
-        });
-    </script>
+    <!-- 引入其他必要脚本 -->
+    <script defer src="<?= $this->options->themeUrl('/js/medium-zoom.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/highlight.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/PureSuck_Module.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/OwO.min.js'); ?>"></script>
+    <script defer src="<?= $this->options->themeUrl('/js/MoxDesign.js'); ?>"></script>
 
     <!-- Pjax 支持 -->
     <?php if ($this->options->enablepjax == '1'): ?>
-        <script defer src="<?php $this->options->themeUrl('/js/pjax.min.js'); ?>"></script>
+        <script defer src="<?= $this->options->themeUrl('/js/pjax.min.js'); ?>"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 new Pjax({
@@ -128,47 +117,46 @@
                 });
 
                 document.addEventListener("pjax:success", () => {
-                    runShortcodes();
-                    initializeStickyTOC();  // 确保在 PJAX 刷新后调用
                     AOS.refresh();
                 });
             });
 
-            // 初始化 TOC
-            function initializeStickyTOC() {
-                const toc = document.querySelector('.toc');
-                if (toc) {
-                    toc.classList.add('sticky');
-                }
-            }
-
             // 初始化评论框的 OwO 表情
-            function initializeCommentsOwO() {
-                const observer = new MutationObserver((mutations, observer) => {
-                    const container = document.querySelector('.OwO-container');
-                    const textarea = document.querySelector('.OwO-textarea');
+            document.addEventListener('DOMContentLoaded', function () {
+    // 初始化 OwO 表情
+    initializeCommentsOwO();
+});
 
-                    if (container && textarea) {
-                        new OwO({
-                            logo: '表情',
-                            container: container,
-                            target: textarea,
-                            api: '<?php $this->options->themeUrl('/json/OwO.json'); ?>',
-                            position: 'down',
-                            width: '100%',
-                            maxHeight: '250px'
-                        });
+document.addEventListener('pjax:success', function () {
+    // PJAX 成功后也重新初始化 OwO 表情
+    initializeCommentsOwO();
+});
 
-                        console.log('OwO 初始化成功');
-                        observer.disconnect();
-                    }
-                });
+// 使用 MutationObserver 确保页面加载完毕时初始化 OwO 表情
+function initializeCommentsOwO() {
+    const observer = new MutationObserver(function (mutations, observer) {
+        const container = document.querySelector('.OwO-container');
+        const textarea = document.querySelector('.OwO-textarea');
 
-                observer.observe(document.body, { childList: true, subtree: true });
-            }
+        if (container && textarea) {
+            new OwO({
+                logo: '表情',
+                container: container,
+                target: textarea,
+                api: '<?php $this->options->themeUrl("/json/OwO.json"); ?>',
+                position: 'down',
+                width: '100%',
+                maxHeight: '250px'
+            });
+            console.log('OwO 初始化成功');
+            observer.disconnect(); // 停止观察，避免重复初始化
+        }
+    });
 
-            document.addEventListener('DOMContentLoaded', initializeCommentsOwO);
-            document.addEventListener('pjax:success', initializeCommentsOwO);
+    // 观察整个文档变化
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
         </script>
     <?php endif; ?>
 
@@ -227,7 +215,7 @@
                 </nav>
                 <div class="theme-toggle-container">
                     <button class="theme-toggle" onclick="toggleTheme()" aria-label="日夜切换">
-                        <span id="theme-icon"></span>
+                        <span id="theme-icon" class="icon-auto"></span>
                     </button>
                 </div>
             </div>
