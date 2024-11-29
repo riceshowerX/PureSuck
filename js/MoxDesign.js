@@ -1,153 +1,128 @@
-// MoxDesign 1.0
-function MoxToast(options) {
-    // 默认参数
-    const defaults = {
-        message: "This is a toast message",
-        duration: 3000,
-        position: "bottom", // 可以是 "top" 或 "bottom"
-        backgroundColor: "var(--card2-color)",
-        textColor: "var(--text-color)",
-        borderColor: "var(--border-color)", // 使用CSS变量或默认值
-    };
+// MoxDesign 3.2 - 升级版，使用 jQuery
+const defaults = {
+    message: "这是一个通知消息",
+    duration: 3000,
+    position: "bottom",
+    backgroundColor: "var(--card2-color)",
+    textColor: "var(--text-color)",
+    borderColor: "var(--border-color)",
+    icon: null,
+    title: "通知标题",
+    onShow: null, // 显示回调
+    onHide: null // 隐藏回调
+};
 
-    // 合并用户参数和默认参数
-    const settings = { ...defaults, ...options };
+// 通用的通知组件创建函数
+function createNotificationElement(options, type) {
+    const settings = { ...defaults, ...options }; // 合并默认配置和用户传入的选项
 
-    // 检查并移除旧的Toast元素
-    const oldToast = document.getElementById("mox-toast");
-    if (oldToast && document.body.contains(oldToast)) {
-        oldToast.className = "hide";
-        setTimeout(function () {
-            if (document.body.contains(oldToast)) {
-                document.body.removeChild(oldToast);
-            }
-        }, 500); // 等待动画完成后再移除
+    const $notification = $('<div>', {
+        class: `mox-${type}`,
+        style: `background-color: ${settings.backgroundColor}; color: ${settings.textColor}; border-color: ${settings.borderColor}; z-index: 2000;`,
+        role: 'alert',
+        'aria-live': 'polite'
+    });
+
+    const $content = $('<div>', { class: `${type}-content` });
+
+    // 如果有图标
+    if (settings.icon) {
+        const $icon = $('<div>', { class: 'icon' });
+        if (settings.icon.startsWith("http")) {
+            $icon.append($('<img>', { src: settings.icon, alt: "通知图标" }));
+        } else {
+            $icon.addClass(settings.icon);
+        }
+        $content.append($icon);
     }
 
-    // 创建一个新的div元素
-    const toast = document.createElement("div");
-    toast.id = "mox-toast";
-    toast.textContent = settings.message;
-    toast.style.backgroundColor = settings.backgroundColor;
-    toast.style.color = settings.textColor;
-    toast.style.borderColor = settings.borderColor;
-    toast.style.bottom = settings.position === "bottom" ? `45px` : "auto";
-    toast.style.top = settings.position === "top" ? `45px` : "auto";
-    toast.classList.add(settings.position);
+    const $title = $('<div>', { class: `${type}-title`, text: settings.title });
+    const $message = $('<div>', { class: `${type}-message`, text: settings.message });
 
-    // 将Toast元素插入到body中
-    document.body.appendChild(toast);
+    $content.append($title, $message);
+    $notification.append($content);
 
-    // 显示Toast
-    toast.className = `${settings.position} show`;
+    const $closeButton = $('<div>', {
+        class: `${type}-close-btn`,
+        text: "×",
+        click: () => hideNotification($notification, settings.onHide)
+    });
 
-    // 设置定时器以移除Toast元素
-    setTimeout(function () {
-        toast.className = `${settings.position} hide`;
-        setTimeout(function () {
-            if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
-            }
-        }, 500); // 等待动画完成后再移除
-    }, settings.duration);
+    $notification.append($closeButton);
+
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild($notification[0]);
+
+    // 如果提供了 onShow 回调，则执行
+    settings.onShow && settings.onShow();
+
+    return fragment;
 }
 
-function MoxNotification(options) {
-    const defaults = {
-        title: "Notification Title",
-        message: "This is a notification message",
-        duration: 4500,
-        position: "bottom-right",
-        backgroundColor: "var(--card2-color)",
-        textColor: "var(--text-color)",
-        borderColor: "var(--border-color)",
-        icon: null,
-    };
+// Toast 消息队列
+let toastQueue = [];
 
+function MoxToast(options = {}) {
     const settings = { ...defaults, ...options };
 
-    let container = document.querySelector('.mox-notification-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'mox-notification-container';
-        document.body.appendChild(container);
+    // 将 toast 添加到队列
+    toastQueue.push(settings);
+
+    // 如果队列中只有一个 toast，则显示它
+    if (toastQueue.length === 1) {
+        showToast();
+    }
+}
+
+function showToast() {
+    if (toastQueue.length === 0) return; // 队列为空时，直接返回
+
+    const currentToastSettings = toastQueue[0];
+    const toast = createNotificationElement(currentToastSettings, "toast");
+
+    // 确保元素创建成功
+    if (!toast) {
+        console.error("无法创建通知元素");
+        return;
     }
 
-    const notification = document.createElement("div");
-    notification.className = "mox-notification";
-    notification.style.backgroundColor = settings.backgroundColor;
-    notification.style.color = settings.textColor;
-    notification.style.borderColor = settings.borderColor;
+    const $toast = $(toast);
+    $('body').append($toast);
+    $toast.addClass('show');
 
-    if (settings.icon) {
-        const icon = document.createElement("div");
-        icon.className = "icon";
-        if (settings.icon.startsWith("http")) {
-            const img = document.createElement("img");
-            img.src = settings.icon;
-            img.alt = "Notification Icon";
-            icon.appendChild(img);
-        } else {
-            icon.className += ` ${settings.icon}`;
-        }
-        notification.appendChild(icon);
+    setTimeout(() => {
+        hideNotification($toast, () => {
+            toastQueue.shift();  // 从队列中移除当前的 toast
+            if (toastQueue.length > 0) {
+                showToast(); // 递归显示下一个 toast
+            }
+        });
+    }, currentToastSettings.duration);
+}
+
+// Notification 消息
+function MoxNotification(options = {}) {
+    const settings = { ...defaults, ...options };
+
+    let $container = $('.mox-notification-container');
+    if ($container.length === 0) {
+        $container = $('<div>', { class: 'mox-notification-container' }).appendTo('body');
     }
 
-    const content = document.createElement("div");
-    content.className = "mox-content";
-
-    const title = document.createElement("div");
-    title.className = "mox-title";
-    title.textContent = settings.title;
-    content.appendChild(title);
-
-    const message = document.createElement("div");
-    message.className = "mox-message";
-    message.textContent = settings.message;
-    content.appendChild(message);
-
-    notification.appendChild(content);
-
-    const closeButton = document.createElement("div");
-    closeButton.className = "mox-close-btn";
-    closeButton.textContent = "×";
-    closeButton.onclick = function () {
-        hideNotification(notification);
-    };
-    notification.appendChild(closeButton);
-
-    container.appendChild(notification);
-
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
+    const notification = createNotificationElement(settings, "notification");
+    $container.append(notification);
+    $(notification).addClass('show');
 
     if (settings.duration > 0) {
-        setTimeout(() => {
-            hideNotification(notification);
-        }, settings.duration);
+        setTimeout(() => hideNotification($(notification), settings.onHide), settings.duration);
     }
 }
 
-function hideNotification(notification) {
-    notification.classList.remove('show');
-    notification.classList.add('hide');
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.parentElement.removeChild(notification);
-        }
-    }, 300);
-}
-
-/**
-    MoxNotification({
-    title: "Persistent Notification",
-    message: "This notification won't auto-close.",
-    duration: 0, //timer set to 0 to disable auto-close
-    icon: "https://example.com/icon.png"
+// 隐藏通知
+function hideNotification($notification, onHide) {
+    $notification.removeClass('show').addClass('hide');
+    $notification.on('animationend', () => {
+        $notification.remove();
+        onHide && onHide();
     });
- **/
+}

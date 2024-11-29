@@ -1,171 +1,150 @@
-/** 这个JS包含了各种需要处理的的内容 **/
-/** 回到顶部按钮，TOC目录，内部卡片部分内容解析都在这里 **/
-
-function handleGoTopButton() {
-    const goTopBtn = document.getElementById('go-top');
-    const observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if (entry.boundingClientRect.top < 0) {
-                goTopBtn.classList.add('visible');
-            } else {
-                goTopBtn.classList.remove('visible');
-            }
-        });
-    });
-    observer.observe(document.body);
-
-    const goTopAnchor = document.querySelector('#go-top .go');
-    goTopAnchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-}
-
-function generateTOC() {
-    const tocSection = document.getElementById("toc-section");
-    const toc = document.querySelector(".toc");
-    const postWrapper = document.querySelector(".inner-post-wrapper");
-
-    if (!toc || !postWrapper) return;
-
-    const elements = Array.from(postWrapper.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-    if (!elements.length) return;
-
-    const fragment = document.createDocumentFragment();
-    const ul = document.createElement('ul');
-    ul.id = 'toc';
-
-    elements.forEach((element, index) => {
-        if (!element.id) {
-            element.id = `heading-${index}`;
+// 节流函数（throttle）
+const throttle = (callback, delay) => {
+    let lastTime = 0;
+    return () => {
+        const now = Date.now(); // 使用 Date.now() 提高兼容性
+        if (now - lastTime >= delay) {
+            requestAnimationFrame(callback); // 使用 requestAnimationFrame 提升性能
+            lastTime = now;
         }
-        const li = document.createElement('li');
-        li.className = `li li-${element.tagName[1]}`;
-        li.innerHTML = `<a href="#${element.id}" id="link-${element.id}" class="toc-a">${element.textContent}</a>`;
-        ul.appendChild(li);
-    });
+    };
+};
 
-    const dirDiv = document.createElement('div');
-    dirDiv.className = 'dir';
-    dirDiv.appendChild(ul);
-    dirDiv.innerHTML += `<div class="sider"><span class="siderbar"></span></div>`;
-    fragment.appendChild(dirDiv);
-
-    toc.appendChild(fragment);
-
-    toc.addEventListener("click", event => {
-        if (event.target.matches('.toc-a')) {
-            event.preventDefault();
-            const targetId = event.target.getAttribute('href').substring(1);
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                const targetTop = targetElement.getBoundingClientRect().top + window.scrollY;
-                window.scrollTo({
-                    top: targetTop,
-                    behavior: "smooth"
-                });
-                setTimeout(() => {
-                    window.location.hash = targetId;
-                }, 300);
-            }
-        }
-    });
-
-    handleScroll(elements);
-
-    if (tocSection) {
-        tocSection.style.display = "block";
-        const rightSidebar = document.querySelector(".right-sidebar");
-        if (rightSidebar) {
-            rightSidebar.style.position = "absolute";
-            rightSidebar.style.top = "0";
+// 回到顶部按钮
+class GoTopButton {
+    constructor() {
+        this.goTopBtn = $('#go-top');
+        if (this.goTopBtn.length) {
+            this.addObserver();
+            this.addEventListeners();
         }
     }
 
-    window.dispatchEvent(new Event('scroll'));
-}
-
-function getElementTop(element) {
-    let actualTop = element.offsetTop;
-    let current = element.offsetParent;
-    while (current !== null) {
-        actualTop += current.offsetTop;
-        current = current.offsetParent;
-    }
-    return actualTop;
-}
-
-function removeClass(elements) {
-    elements.forEach(element => {
-        const anchor = document.querySelector(`#link-${element.id}`);
-        if (anchor) {
-            anchor.classList.remove("li-active");
-        }
-    });
-}
-
-function handleScroll(elements) {
-    let ticking = false;
-    const tocItems = document.querySelectorAll(".toc li");
-    const siderbar = document.querySelector(".siderbar");
-
-    const elementTops = elements.map(element => getElementTop(element));
-
-    window.addEventListener("scroll", () => {
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                const currentPosition = window.scrollY;
-                let activeElement = null;
-
-                elements.forEach((element, index) => {
-                    const targetTop = elementTops[index];
-                    const elementHeight = element.offsetHeight;
-                    const offset = elementHeight / 2;
-
-                    const nextElement = elements[index + 1];
-                    const nextTargetTop = nextElement ? elementTops[index + 1] : Number.MAX_SAFE_INTEGER;
-
-                    if (currentPosition + offset >= targetTop && currentPosition + offset < nextTargetTop) {
-                        activeElement = element;
-                    }
-                });
-
-                if (!activeElement && elements.length > 0) {
-                    activeElement = elements[0];
-                }
-
-                if (activeElement) {
-                    removeClass(elements);
-                    const anchor = document.querySelector(`#link-${activeElement.id}`);
-                    if (anchor) {
-                        anchor.classList.add("li-active");
-
-                        const index = elements.indexOf(activeElement);
-                        const sidebarTop = tocItems[index].offsetTop;
-                        siderbar.style.transform = `translateY(${sidebarTop + 4}px)`;
-                    }
-                }
-
-                ticking = false;
+    addObserver() {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // 根据是否可视添加/移除按钮显示
+                this.goTopBtn.toggleClass('visible', entry.boundingClientRect.top < 0);
             });
-            ticking = true;
-        }
-    });
+        });
+        observer.observe(document.body);
+    }
+
+    addEventListeners() {
+        this.goTopBtn.find('.go').on('click', (e) => {
+            e.preventDefault();
+            $('html, body').animate({ scrollTop: 0 }, 'smooth');
+        });
+    }
 }
 
-function parseFriendCards() {
-    const container = document.body;
-    const fragment = document.createDocumentFragment();
+// TOC 目录生成
+class TOC {
+    constructor() {
+        this.tocSection = $("#toc-section");
+        this.toc = $(".toc");
+        this.postWrapper = $(".inner-post-wrapper");
 
-    function identifyGroups(node) {
+        if (this.toc.length && this.postWrapper.length) {
+            this.generateTOC();
+        }
+    }
+
+    generateTOC() {
+        const elements = this.postWrapper.find("h1, h2, h3, h4, h5, h6");
+        if (!elements.length) return;
+
+        const ul = $('<ul>', { id: 'toc' });
+
+        elements.each((index, element) => {
+            const $element = $(element);
+            const sanitizedId = `heading-${index}`.replace(/[^a-zA-Z0-9_-]/g, '');  // 清理 ID
+            $element.attr('id', $element.attr('id') || sanitizedId);
+            const li = $('<li>', { class: `li li-${element.tagName[1]}` });
+            li.text($element.text());  // 使用 text() 方法插入纯文本
+            ul.append(li);
+        });
+
+        const dirDiv = $('<div>', { class: 'dir' }).append(ul);
+        dirDiv.append('<div class="sider"><span class="siderbar"></span></div>');
+        
+        this.toc.append(dirDiv);
+
+        this.handleScroll(elements);
+
+        // 确保 #toc-section 存在才进行显示
+        if (this.tocSection.length) {
+            this.tocSection.show();
+            $(".right-sidebar").css({ position: 'absolute', top: 0 });
+        }
+
+        $(window).trigger('scroll');
+    }
+
+    handleScroll(elements) {
+        const tocItems = $(".toc li");
+        const siderbar = $(".siderbar");
+
+        const elementTops = elements.map((_, element) => this.getElementTop(element)).toArray();
+
+        const observer = new IntersectionObserver(entries => {
+            let activeElement = null;
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    activeElement = entry.target;
+                }
+            });
+
+            if (activeElement) {
+                this.removeClass(elements);
+                const anchor = $(`#link-${activeElement.id}`);
+                if (anchor.length) {
+                    anchor.addClass("li-active");
+                    const index = elements.index(activeElement);
+                    const sidebarTop = tocItems.eq(index).offset().top;
+                    siderbar.css('transform', `translateY(${sidebarTop + 4}px)`);
+                }
+            }
+        }, { rootMargin: '0px 0px -50% 0px' });
+
+        elements.each((_, element) => observer.observe(element));
+    }
+
+    getElementTop(element) {
+        const rect = element.getBoundingClientRect();
+        return rect.top + $(window).scrollTop();
+    }
+
+    removeClass(elements) {
+        elements.each((_, element) => {
+            const anchor = $(`#link-${element.id}`);
+            if (anchor.length) {
+                anchor.removeClass("li-active");
+            }
+        });
+    }
+}
+
+// 解析朋友卡片
+class FriendCards {
+    constructor() {
+        this.container = $(document.body);
+        this.parseFriendCards();
+    }
+
+    parseFriendCards() {
+        const fragment = $(document.createDocumentFragment());
+        const groups = this.identifyGroups(this.container[0].firstChild);
+        this.replaceGroups(groups);
+        this.container.append(fragment);
+    }
+
+    identifyGroups(node) {
         const groups = [];
         let currentGroup = null;
 
         while (node) {
-            if (node.nodeType === Node.ELEMENT_NODE && node.hasAttribute('friend-name')) {
+            if (node.nodeType === Node.ELEMENT_NODE && $(node).attr('friend-name')) {
                 if (!currentGroup) {
                     currentGroup = [];
                     groups.push(currentGroup);
@@ -177,7 +156,7 @@ function parseFriendCards() {
             }
 
             if (node.firstChild) {
-                groups.push(...identifyGroups(node.firstChild));
+                groups.push(...this.identifyGroups(node.firstChild));
             }
 
             node = node.nextSibling;
@@ -185,356 +164,130 @@ function parseFriendCards() {
         return groups;
     }
 
-    function replaceGroups(groups) {
+    replaceGroups(groups) {
         groups.forEach(group => {
             if (group.length > 0) {
-                const friendsBoardList = document.createElement('div');
-                friendsBoardList.classList.add('friendsboard-list');
+                const friendsBoardList = $('<div>', { class: 'friendsboard-list' });
 
                 group.forEach(node => {
-                    const friendName = node.getAttribute('friend-name');
-                    const avatarUrl = node.getAttribute('ico');
-                    const url = node.getAttribute('url');
+                    const $node = $(node);
+                    const friendName = $node.attr('friend-name');
+                    const avatarUrl = $node.attr('ico');
+                    const url = $node.attr('url');
 
-                    const newContent = document.createElement('a');
-                    newContent.href = url;
-                    newContent.classList.add('friendsboard-item');
-                    newContent.target = "_blank";
-                    newContent.innerHTML = `
-                        <div class="friends-card-header">
-                            <span class="friends-card-username">${friendName}</span>
-                            <span class="friends-card-dot"></span>
-                        </div>
-                        <div class="friends-card-body">
-                            <div class="friends-card-text">
-                                ${node.innerHTML}
-                            </div>
-                            <div class="friends-card-avatar-container">
-                                <img src="${avatarUrl}" alt="Avatar" class="friends-card-avatar">
-                            </div>
-                        </div>
-                    `;
+                    if (this.isValidURL(url)) {
+                        const newContent = $(`
+                            <a href="${url}" class="friendsboard-item" target="_blank">
+                                <div class="friends-card-header">
+                                    <span class="friends-card-username">${friendName}</span>
+                                    <span class="friends-card-dot"></span>
+                                </div>
+                                <div class="friends-card-body">
+                                    <div class="friends-card-text">${$node.text()}</div>
+                                    <div class="friends-card-avatar-container">
+                                        <img src="${avatarUrl}" alt="Avatar" class="friends-card-avatar">
+                                    </div>
+                                </div>
+                            </a>
+                        `);
 
-                    friendsBoardList.appendChild(newContent);
+                        friendsBoardList.append(newContent);
+                    }
                 });
 
-                const firstNode = group[0];
-                firstNode.innerHTML = '';
-                firstNode.appendChild(friendsBoardList);
+                const firstNode = $(group[0]);
+                firstNode.empty().append(friendsBoardList);
 
                 for (let i = 1; i < group.length; i++) {
-                    group[i].remove();
+                    $(group[i]).remove();
                 }
             }
         });
     }
 
-    const groups = identifyGroups(container.firstChild);
-    replaceGroups(groups);
-
-    container.appendChild(fragment);
+    isValidURL(url) {
+        const pattern = new RegExp('^(https?:\\/\\/)?([a-z0-9-]+\\.)+[a-z0-9]{2,4}(\\/[^\\s]*)?$', 'i');
+        return pattern.test(url);
+    }
 }
 
+// 解析可折叠面板
+class CollapsiblePanels {
+    constructor() {
+        this.parseCollapsiblePanels();
+    }
 
-function parseCollapsiblePanels() {
-    const elements = document.querySelectorAll('[collapsible-panel]');
+    parseCollapsiblePanels() {
+        const elements = $('[collapsible-panel]');
 
-    elements.forEach(element => {
-        const title = element.getAttribute('title');
-        const content = element.innerHTML;
+        elements.each((_, element) => {
+            const $element = $(element);
+            const title = $element.attr('title');
+            const content = $element.text();  // 使用 text() 方法，防止解析 HTML
 
-        const newContent = `<div class="collapsible-panel">
-            <button class="collapsible-header">
-                ${title}
-                <span class="icon icon-down-open"></span>
-            </button>
-            <div class="collapsible-content" style="max-height: 0; overflow: hidden; transition: all .4s cubic-bezier(0.345, 0.045, 0.345, 1);">
-                <div class="collapsible-details">${content}</div>
-            </div>
-        </div>`;
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = newContent;
-        const newPanel = tempDiv.firstChild;
-
-        const button = newPanel.querySelector('.collapsible-header');
-        const contentDiv = newPanel.querySelector('.collapsible-content');
-        const icon = button.querySelector('.icon');
-
-        button.addEventListener('click', function () {
-            this.classList.toggle('active');
-
-            if (contentDiv.style.maxHeight && contentDiv.style.maxHeight !== '0px') {
-                contentDiv.style.maxHeight = '0px';
-                icon.classList.remove('icon-up-open');
-                icon.classList.add('icon-down-open');
-            } else {
-                contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
-                icon.classList.remove('icon-down-open');
-                icon.classList.add('icon-up-open');
-            }
-        });
-
-        element.parentNode.replaceChild(newPanel, element);
-    });
-}
-
-function parseTabs() {
-    const tabContainers = document.querySelectorAll('[tabs]');
-
-    tabContainers.forEach((container, containerIndex) => {
-        const tabElements = Array.from(container.children);
-        const tabTitles = [];
-        const tabContents = [];
-
-        tabElements.forEach((child) => {
-            const title = child.getAttribute('tab-title');
-            if (title) {
-                tabTitles.push(title);
-                tabContents.push(child.cloneNode(true));
-            }
-        });
-
-        if (tabTitles.length === 0) return;
-
-        const tabHeaderHTML = tabTitles.map((title, index) => `
-            <div class="tab-link ${index === 0 ? 'active' : ''}" 
-                 data-tab="tab${containerIndex + 1}-${index + 1}" 
-                 role="tab" 
-                 aria-controls="tab${containerIndex + 1}-${index + 1}" 
-                 tabindex="${index === 0 ? '0' : '-1'}">
-                ${title}
-            </div>
-        `).join('');
-
-        const tabContentHTML = tabContents.map((content, index) => {
-            const tabPane = document.createElement('div');
-            tabPane.className = `tab-pane ${index === 0 ? 'active' : ''}`;
-            tabPane.id = `tab${containerIndex + 1}-${index + 1}`;
-            tabPane.setAttribute('role', 'tabpanel');
-            tabPane.setAttribute('aria-labelledby', `tab${containerIndex + 1}-${index + 1}`);
-            tabPane.appendChild(content);
-            return tabPane.outerHTML;
-        }).join('');
-
-        const tabContainer = document.createElement('div');
-        tabContainer.className = 'tab-container';
-        tabContainer.innerHTML = `
-            <div class="tab-header-wrapper">
-                <button class="scroll-button left" aria-label="向左"></button>
-                <div class="tab-header" role="tablist">
-                    ${tabHeaderHTML}
-                    <div class="tab-indicator"></div>
+            const newContent = $(`
+                <div class="collapsible-panel">
+                    <button class="collapsible-header">
+                        ${title}
+                        <span class="icon icon-down-open"></span>
+                    </button>
+                    <div class="collapsible-content" style="max-height: 0; overflow: hidden; transition: all .4s cubic-bezier(0.345, 0.045, 0.345, 1);">
+                        <div class="collapsible-details">${content}</div>
+                    </div>
                 </div>
-                <button class="scroll-button right" aria-label="向右"></button>
-            </div>
-            <div class="tab-content">
-                ${tabContentHTML}
-            </div>
-        `;
+            `);
 
-        container.innerHTML = '';
-        container.appendChild(tabContainer);
+            const button = newContent.find('.collapsible-header');
+            const contentDiv = newContent.find('.collapsible-content');
+            const icon = button.find('.icon');
 
-        const tabHeaderElement = tabContainer.querySelector('.tab-header');
-        const tabLinks = tabHeaderElement.querySelectorAll('.tab-link');
-        const tabPanes = tabContainer.querySelectorAll('.tab-pane');
-        const indicator = tabContainer.querySelector('.tab-indicator');
-        const leftButton = tabContainer.querySelector('.scroll-button.left');
-        const rightButton = tabContainer.querySelector('.scroll-button.right');
-
-        let cachedWidths = [];
-        let cachedOffsets = [];
-
-        const updateIndicator = (activeLink) => {
-            const index = Array.from(tabLinks).indexOf(activeLink);
-            requestAnimationFrame(() => {
-                indicator.style.width = `${cachedWidths[index] * 0.75}px`;
-                indicator.style.left = `${cachedOffsets[index] + (cachedWidths[index] * 0.125)}px`;
-            });
-        };
-
-        const checkScrollButtons = () => {
-            const totalWidth = cachedWidths.reduce((acc, width) => acc + width, 0);
-            const containerWidth = tabHeaderElement.offsetWidth;
-
-            requestAnimationFrame(() => {
-                const shouldShowButtons = totalWidth > containerWidth;
-                leftButton.style.display = shouldShowButtons ? 'block' : 'none';
-                rightButton.style.display = shouldShowButtons ? 'block' : 'none';
-            });
-        };
-
-        const updateLayout = () => {
-            cachedWidths = [];
-            cachedOffsets = [];
-            tabLinks.forEach((link, index) => {
-                cachedWidths[index] = link.offsetWidth;
-                cachedOffsets[index] = link.offsetLeft;
-            });
-            checkScrollButtons();
-            const activeIndex = Array.from(tabLinks).findIndex(link => link.classList.contains('active'));
-            updateIndicator(tabLinks[activeIndex]);
-        };
-
-        const resizeObserver = new ResizeObserver(updateLayout);
-        resizeObserver.observe(tabHeaderElement);
-
-        leftButton.addEventListener('click', () => {
-            tabHeaderElement.scrollBy({ left: -100, behavior: 'smooth' });
-            updateLayout();
-        });
-
-        rightButton.addEventListener('click', () => {
-            tabHeaderElement.scrollBy({ left: 100, behavior: 'smooth' });
-            updateLayout();
-        });
-
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        const onMouseDown = (e) => {
-            isDown = true;
-            startX = e.pageX - tabHeaderElement.offsetLeft;
-            scrollLeft = tabHeaderElement.scrollLeft;
-        };
-
-        const onMouseUpOrLeave = () => {
-            isDown = false;
-            updateLayout();
-        };
-
-        const onMouseMove = (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - tabHeaderElement.offsetLeft;
-            const walk = (x - startX) * 2;
-            tabHeaderElement.scrollLeft = scrollLeft - walk;
-        };
-
-        tabHeaderElement.addEventListener('mousedown', onMouseDown);
-        tabHeaderElement.addEventListener('mouseleave', onMouseUpOrLeave);
-        tabHeaderElement.addEventListener('mouseup', onMouseUpOrLeave);
-        tabHeaderElement.addEventListener('mousemove', onMouseMove);
-
-        tabHeaderElement.addEventListener('touchstart', (e) => {
-            isDown = true;
-            startX = e.touches[0].pageX - tabHeaderElement.offsetLeft;
-            scrollLeft = tabHeaderElement.scrollLeft;
-        }, { passive: true });
-
-        tabHeaderElement.addEventListener('touchend', onMouseUpOrLeave, { passive: true });
-        tabHeaderElement.addEventListener('touchmove', (e) => {
-            if (!isDown) return;
-            const x = e.touches[0].pageX - tabHeaderElement.offsetLeft;
-            const walk = (x - startX) * 2;
-            tabHeaderElement.scrollLeft = scrollLeft - walk;
-        }, { passive: true });
-
-        tabHeaderElement.addEventListener('click', (event) => {
-            if (event.target.classList.contains('tab-link')) {
-                const currentIndex = Array.from(tabLinks).indexOf(event.target);
-                const previousIndex = Array.from(tabLinks).findIndex(link => link.classList.contains('active'));
-
-                tabLinks.forEach(link => link.classList.remove('active'));
-                tabPanes.forEach(pane => {
-                    pane.classList.remove('active');
-                    pane.removeAttribute('data-aos');
-                    pane.classList.remove('aos-animate');
-                });
-
-                event.target.classList.add('active');
-                const activePane = document.getElementById(event.target.getAttribute('data-tab'));
-                activePane.classList.add('active');
-
-                activePane.setAttribute('data-aos', currentIndex > previousIndex ? 'fade-left' : 'fade-right');
-
-                updateIndicator(event.target);
-
-                setTimeout(() => {
-                    activePane.classList.add('aos-animate');
-                }, 0);
-
-                if (typeof AOS !== 'undefined') {
-                    AOS.refresh();
+            button.on('click', () => {
+                $(button).toggleClass('active');
+                if (contentDiv.css('max-height') && contentDiv.css('max-height') !== '0px') {
+                    contentDiv.css('max-height', '0px');
+                    icon.removeClass('icon-up-open').addClass('icon-down-open');
+                } else {
+                    contentDiv.css('max-height', contentDiv[0].scrollHeight);
+                    icon.removeClass('icon-down-open').addClass('icon-up-open');
                 }
+            });
 
-                tabLinks.forEach(link => link.setAttribute('tabindex', '-1'));
-                event.target.setAttribute('tabindex', '0');
-                event.target.focus();
-
-                const tabHeaderRect = tabHeaderElement.getBoundingClientRect();
-                const targetRect = event.target.getBoundingClientRect();
-                if (targetRect.left < tabHeaderRect.left) {
-                    tabHeaderElement.scrollBy({ left: targetRect.left - tabHeaderRect.left, behavior: 'smooth' });
-                } else if (targetRect.right > tabHeaderRect.right) {
-                    tabHeaderElement.scrollBy({ left: targetRect.right - tabHeaderRect.right, behavior: 'smooth' });
-                }
-
-                updateLayout();
-            }
+            $element.replaceWith(newContent);
         });
-
-        updateIndicator(tabLinks[0]);
-    });
+    }
 }
 
-function initializeStickyTOC() {
-    const tocSection = document.getElementById('toc-section');
-    if (!tocSection) return;
-
-    const buffer = 50;
-    const tocAboveElements = document.querySelectorAll('.right-sidebar > *:not(#toc-section)');
-    const initialTocAboveHeight = Array.from(tocAboveElements).reduce((total, element) => total + element.offsetHeight, 0);
-    const threshold = initialTocAboveHeight + buffer;
-
-    let isTicking = false;
-
-    function onScroll() {
-        if (!isTicking) {
-            isTicking = true;
-            window.requestAnimationFrame(() => {
-                const currentScrollY = window.scrollY;
-                const shouldStick = currentScrollY >= threshold;
-                if (tocSection.classList.contains('sticky') !== shouldStick) {
-                    tocSection.classList.toggle('sticky', shouldStick);
-                }
-                isTicking = false;
-            });
-        }
+// 解析选项卡
+class Tabs {
+    constructor() {
+        this.parseTabs();
     }
 
-    window.addEventListener('scroll', onScroll);
+    parseTabs() {
+        const tabContainers = $('.tabs');
+
+        tabContainers.each((_, container) => {
+            const $container = $(container);
+            const tabs = $container.find('.tab');
+            const contentSections = $container.find('.tab-content');
+
+            tabs.each((tabIndex, tab) => {
+                $(tab).off('click').on('click', function () {
+                    tabs.removeClass('active');
+                    contentSections.removeClass('active');
+                    $(this).addClass('active');
+                    contentSections.eq(tabIndex).addClass('active');
+                });
+            });
+        });
+    }
 }
 
-
-function Comments_Submit() {
-    const submitButton = document.getElementById("submit");
-    const textarea = document.getElementById("textarea");
-
-    if (!submitButton || !textarea) return;
-
-    submitButton.addEventListener("click", () => {
-        if (textarea.value.trim() !== "") {
-            submitButton.textContent = "提交中~";
-        }
-    });
-}
-
-function runShortcodes() {
-    history.scrollRestoration = 'auto'; // 不知道为什么总会回到顶端
-    parseFriendCards();
-    parseCollapsiblePanels();
-    parseTabs();
-    handleGoTopButton();
-    generateTOC();
-    mediumZoom('[data-zoomable]', {
-        background: 'var(--card-color)'
-    });
-    Comments_Submit()
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    runShortcodes();
+// 页面加载完成后初始化功能
+$(document).ready(() => {
+    new GoTopButton();
+    new TOC();
+    new FriendCards();
+    new CollapsiblePanels();
+    new Tabs();
 });

@@ -1,13 +1,11 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__')) exit; ?>
+
 <?php $this->footer(); ?>
 
 <!-- 回到顶端 -->
-
-<body>
-  <div class="go-top" id="go-top">
+<div class="go-top" id="go-top">
     <a href="#" class="go icon-up-open" aria-label="返回顶部"></a>
-  </div>
-</body>
+</div>
 
 <!-- AOS -->
 <script>

@@ -180,3 +180,128 @@
     cursor: pointer;
     font-size: 24px;
 }
+
+/* 通用样式 */
+.mox-toast, .mox-notification {
+    position: fixed;
+    z-index: 2000;
+    max-width: 400px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+    margin: 0 20px;
+}
+
+/* 内容区域样式 */
+.mox-toast-content, .mox-notification-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* 标题和消息 */
+.mox-toast-title, .mox-notification-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.mox-toast-message, .mox-notification-message {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* 图标样式 */
+.mox-toast .icon, .mox-notification .icon {
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.mox-toast .icon img, .mox-notification .icon img {
+    width: 24px;
+    height: 24px;
+}
+
+/* 动画效果 */
+.mox-toast.show, .mox-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mox-toast.hide, .mox-notification.hide {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* 关闭按钮 */
+.mox-toast-close-btn, .mox-notification-close-btn {
+    font-size: 18px;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: bold;
+    align-self: flex-end;
+}
+
+/* 关闭按钮悬停效果 */
+.mox-toast-close-btn:hover, .mox-notification-close-btn:hover {
+    color: var(--highlight-color);
+}
+
+/* 位置设置 */
+.mox-toast-bottom, .mox-notification-bottom {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.mox-toast-top, .mox-notification-top {
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.mox-toast-left, .mox-notification-left {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.mox-toast-right, .mox-notification-right {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Toast 队列的样式（确保多个 Toast 按顺序显示） */
+.mox-toast + .mox-toast {
+    margin-top: 10px;
+}
+
+.mox-notification-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    left: 20px;
+    max-width: 400px;
+    width: 100%;
+    z-index: 2000;
+}
+
+/* 适应不同屏幕的响应式设计 */
+@media (max-width: 600px) {
+    .mox-toast, .mox-notification {
+        max-width: 100%;
+        margin: 10px;
+    }
+}
+

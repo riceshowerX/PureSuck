@@ -4,11 +4,12 @@
 <div class="wrapper">
 
     <?php
+    // 检查是否有图片
     $hasImg = $this->fields->img ? true : false;
     ?>
     <article class="post <?= $hasImg ? 'post--photo post--cover' : 'post--text'; ?> post--index main-item" data-aos="fade-up" data-aos-anchor-placement="top-bottom">
         <div class="post-inner">
-            <header class="post-item post-header  <?= $hasImg ? 'no-bg' : ''; ?>">
+            <header class="post-item post-header <?= $hasImg ? 'no-bg' : ''; ?>">
                 <div class="wrapper post-wrapper">
                     <div class="avatar post-author">
                         <img src="<?= $this->options->authorAvatar ?: $this->options->themeUrl('images/avatar.png'); ?>" alt="作者头像" class="avatar-item avatar-img">
@@ -22,7 +23,7 @@
             <!-- 大图样式 -->
             <?php if ($hasImg): ?>
                 <figure class="post-media <?= $this->is('post') ? 'single' : ''; ?>">
-                    <img data-aos="zoom-out" itemprop="image" src="<?php $this->fields->img(); ?>" alt="头图" width="2000" height="800">
+                    <img data-aos="zoom-out" itemprop="image" src="<?php $this->fields->img(); ?>" alt="头图" width="2000" height="800" loading="lazy">
                 </figure>
             <?php endif; ?>
 
@@ -35,21 +36,18 @@
                     </h1>
                     <div class="inner-post-wrapper">
                         <div class="meta post-meta">
-                            <a itemprop="datePublished" href="<?php $this->permalink() ?>"
-                                class="icon-ui icon-ui-date meta-item meta-date">
+                            <a itemprop="datePublished" href="<?php $this->permalink() ?>" class="icon-ui icon-ui-date meta-item meta-date">
                                 <span class="meta-count">
                                     <?php $this->date(); ?>
                                 </span>
                             </a>
-                            <a href="<?php $this->permalink() ?>#comments"
-                                class="icon-ui icon-ui-comment meta-item meta-comment">
+                            <a href="<?php $this->permalink() ?>#comments" class="icon-ui icon-ui-comment meta-item meta-comment">
                                 <?php $this->commentsNum('暂无评论', '1 条评论', '%d 条评论'); ?>
                             </a>
                         </div>
 
                         <!-- 解析正文以及短代码 -->
                         <?php echo parseShortcodes($this->content); ?>
-
                     </div>
                 </div>
             </section>
@@ -72,10 +70,10 @@
             if (!empty($options->footerInfo)) {
                 echo $options->footerInfo;
             }
-            ?> </span>
+            ?> 
+        </span>
     </div>
 </nav>
-</main>
 
 <?php $this->need('sidebar.php'); ?>
 <?php $this->need('footer.php'); ?>

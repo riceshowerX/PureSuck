@@ -14,6 +14,14 @@
 	/* Light 颜色变量 */
 }
 
+.post-title::after {
+    content: '';
+    position: absolute;
+    display: block;
+    background: #2a2a2a;
+    bottom: 5px;
+    left: 0;
+}
 
 [data-theme="dark"] {
 	--background-color: #1d1f20;
