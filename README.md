@@ -2,7 +2,7 @@
 # PureSuck-Theme
 
 > 原作者仓库：[MoXiaoXi233/PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)  
-> 魔改版：魔改半成品慎用
+> 魔改版：[云野](https://miksz.cc)
 
 ![Banner](https://s2.loli.net/2024/08/05/M4FTuyI2b7aU3Ag.png)
 ![Release Badge](https://img.shields.io/github/v/release/MoXiaoXi233/PureSuck-theme)
